@@ -28,7 +28,7 @@ def main(query_path, docs_path, language, output_path):
         # 4. Retrieve relevant chunks
         query_text = query['query']['content']
         # print(f"\nRetrieving chunks for query: '{query_text}'")
-        retrieved_chunks = retriever.retrieve(query_text)
+        retrieved_chunks = retriever.retrieve(query_text, top_k=3)
         # print(f"Retrieved {len(retrieved_chunks)} chunks.")
 
         # 5. Generate Answer
