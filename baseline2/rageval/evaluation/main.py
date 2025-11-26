@@ -59,8 +59,6 @@ def process_jsonl(input_file, output_file, evaluator_names, num_workers, use_ope
                     f_out.flush()
 
 
-
-
 def main():
     parser = argparse.ArgumentParser(description="Process JSONL file and evaluate completeness.")
     parser.add_argument("--input_file", help="Path to the input JSONL file")
@@ -70,7 +68,7 @@ def main():
 
     args = parser.parse_args()
     evaluator_names = ["rouge-l", "precision", "recall", "eir", "keypoint_metrics"]
-    process_jsonl(args.input_file, args.output_file, evaluator_names, args.num_workers, True, args.language, "llama3.3:70b", "v1")
+    process_jsonl(args.input_file, args.output_file, evaluator_names, args.num_workers, True, args.language, "granite4:3b", "v1")
 
 if __name__ == "__main__":
     main()
