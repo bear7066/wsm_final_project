@@ -1,5 +1,5 @@
 ## 說明
-1. baseline 多了 check format 而已
+1. baseline1 多了 check format 而已
 2. baseline2 這隻程式可以算分數，現在的分數在 result directory
 
 ### Prerequisites
