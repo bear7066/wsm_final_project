@@ -1,6 +1,6 @@
 ## 說明
 1. baseline 多了 check format 而已
-2. baseline2 這隻程式可以算分數，現在的分數在 result directory
+2. baseline2(main) 這隻程式可以算分數，現在的分數在 result directory
 
 ### Prerequisites
 
@@ -29,6 +29,3 @@
 4. time limit: 3 hours
 5. package size: 5GB (can use other model but not exceed it)
 6. ollama host should be replace to: http://ollama-gateway:11434
-
-
-### ⚠️ rageval score evaluation is not executed successfully yet (```run.sh```)

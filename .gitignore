@@ -1,1 +1,14 @@
-__pycache__
+# Virtual environment
+.venv
+
+# IDE specific files
+.vscode
+
+# Python cache files
+__pycache__/
+
+# config files used for local testing
+configs/config_local.yaml
+
+# output files
+predictions/
