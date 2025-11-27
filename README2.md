@@ -1,8 +1,13 @@
 ## 說明
 1. baseline1 多了 check format 
 2. baseline2 這隻程式可以算分數，現在的分數在這個 branch 的 result directory
-3. 主要開發請用 main 的分支出去，呈交需用 main 的格式，所以有寫東西請發 PR
+3. 主要開發請用 main 分支出去，呈交需用 main 的格式，所以有寫東西請發 PR
 4. 不要把 ```SUBMISSIO_TOKEN``` 上傳上來 
+5. 不要直接 push main 的東西上去，這會直接傳到算分系統
+
+# 建議做法
+1. 先用 baseline2 開發，因為可以算分數，再 merge 到 main
+2. 不要在 main 下 push，會直接傳去算分數
 
 ### Prerequisites
 
