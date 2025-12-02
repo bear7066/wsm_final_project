@@ -4,16 +4,6 @@ Selector module will select relevant prompt templates based on the query and rel
 import os
 from utils import llm_generate
 
-def load_templates(template_dir: str) -> dict:
-    """Loads all templates from the given directory."""
-    templates = {}
-    for filename in os.listdir(template_dir):
-        if filename.endswith(".txt"):
-            with open(os.path.join(template_dir, filename), 'r') as f:
-                templates[filename] = f.read()
-    return templates
-
-
 def select_prompt(query: str, context_chunks: list) -> str:
     """Load all templates and use LLM to select the most relevant one."""
     templates = {}
