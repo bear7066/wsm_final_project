@@ -3,6 +3,8 @@ from utils import load_jsonl, save_jsonl
 from chunker import chunk_documents
 from retriever import create_retriever
 from generator import generate_answer
+from selector import select_prompt
+from judger import enhanced_prompt
 import argparse
 
 def main(query_path, docs_path, language, output_path):
@@ -31,9 +33,13 @@ def main(query_path, docs_path, language, output_path):
         retrieved_chunks = retriever.retrieve(query_text)
         # print(f"Retrieved {len(retrieved_chunks)} chunks.")
 
-        # 5. Generate Answer
-        # print("Generating answer...")
-        answer = generate_answer(query_text, retrieved_chunks)
+        # 5. 
+        # Select prompt template 
+        # (optional) enhance prompt        
+        # Generate Answer
+        prompt_template = select_prompt(query_text, retrieved_chunks) 
+        final_prompt = enhanced_prompt(query_text, retrieved_chunks, prompt_template)
+        answer = generate_answer(query_text, retrieved_chunks, prompt= final_prompt)
 
         query["prediction"]["content"] = answer
         query["prediction"]["references"] = [retrieved_chunks[0]['page_content']]

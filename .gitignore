@@ -12,3 +12,5 @@ configs/config_local.yaml
 
 # output files
 predictions/
+
+.DS_Store
