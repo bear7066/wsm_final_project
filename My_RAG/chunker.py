@@ -25,7 +25,7 @@ def split_sentences(text, language):
         sentences = re.split(r'(?<=[.?!])\s+', text)
         return [s for s in sentences if s.strip()]
 
-def chunk_documents(docs, language, chunk_size=500, chunk_overlap=100):
+def chunk_documents(docs, language, chunk_size=500, chunk_overlap=150):
     chunks = []
     for doc_index, doc in enumerate(docs):
         if 'content' not in doc or not isinstance(doc['content'], str) or 'language' not in doc:

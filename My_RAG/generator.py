@@ -2,7 +2,23 @@ from utils import llm_generate
 
 
 def generate_answer(query, context_chunks, prompt_template, language):
-    context = "\n\n".join([chunk['page_content'] for chunk in context_chunks])
+    # context = "\n\n".join([chunk['page_content'] for chunk in context_chunks])
+    
+    # Truncate context to avoid exceeding token limit (approx 2000 chars safe for 4096 tokens)
+    MAX_CONTEXT_LEN = 2000
+    current_context = ""
+    for chunk in context_chunks:
+        content = chunk['page_content']
+        if len(current_context) + len(content) < MAX_CONTEXT_LEN:
+            current_context += content + "\n\n"
+        else:
+            # Add partial content if possible, or just break
+            remaining = MAX_CONTEXT_LEN - len(current_context)
+            if remaining > 50: # Only add if meaningful amount remains
+                current_context += content[:remaining] + "..."
+            break
+            
+    context = current_context.strip()
     prompt_template = prompt_template.replace("{query}", query).replace("{context}", context)
     
     if language == 'zh':
@@ -39,5 +55,5 @@ if __name__ == "__main__":
     【提取結果】
     """
     
-    answer = generate_answer(query, context_chunks, prompt)
+    answer = generate_answer(query, context_chunks, prompt, 'en')
     print("Generated Answer:", answer)

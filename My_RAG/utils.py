@@ -93,7 +93,7 @@ def rerank_chunks(query, chunks, language, top_k=5):
     chunks_text = ""
     for i, chunk in enumerate(chunks):
         # Use a simplified representation to save tokens
-        content_preview = chunk['page_content'][:200].replace("\n", " ")
+        content_preview = chunk['page_content'][:150].replace("\n", " ")
         chunks_text += f"[{i}] {content_preview}...\n"
         
     if language == 'zh':
