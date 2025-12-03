@@ -1,7 +1,7 @@
 from utils import llm_generate
 
 
-def generate_answer(query, context_chunks, prompt):
+def generate_answer(query, context_chunks):
     context = "\n\n".join([chunk['page_content'] for chunk in context_chunks])
     prompt = f"""You are an assistant for question-answering tasks. \
     Use the following pieces of retrieved context to answer the question. \
