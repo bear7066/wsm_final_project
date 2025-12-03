@@ -41,6 +41,7 @@ def load_ollama_config() -> dict:
     assert "model" in config["ollama"], "Ollama model not specified in config file."
     return config["ollama"]
     
+
 def llm_generate(prompt: str, model: str = "granite4:3b") -> str:
     """
     Sends a prompt to the Ollama model and returns the response.
@@ -60,7 +61,7 @@ def llm_generate(prompt: str, model: str = "granite4:3b") -> str:
             explaination in Final_Tutorials 4
         """
         response = client.generate(
-            model=model, 
+            model=ollama_config["model"], 
             prompt=prompt, 
             stream=False, 
             options={
@@ -71,30 +72,6 @@ def llm_generate(prompt: str, model: str = "granite4:3b") -> str:
     except Exception as e:
         return f"Error using Ollama Python client: {e}"
     
-
-if __name__ == "__main__":
-    # test the function
-    query = "What is the capital of France?"
-    context_chunks = [
-        {"page_content": "France is a country in Europe. Its capital is Paris."},
-        {"page_content": "The Eiffel Tower is located in Paris, the capital city of France."}
-    ]
-    
-    context_text = "\n".join([chunk["page_content"] for chunk in context_chunks])
-    full_prompt = f"""
-    Based on the following context, answer the question.
-    
-    Context:
-    {context_text}
-    
-    Question: 
-    {query}
-    """
-
-    print("Sending prompt to LLM...")
-    answer = llm_generate(full_prompt)
-    print("Generated Answer:", answer)
-
 
 def expand_query(query_text, language):
     if language == 'zh':
@@ -183,3 +160,28 @@ Output (JSON Array ONLY):
     except Exception as e:
         print(f"Error parsing reranking response: {e}")
         return chunks[:top_k]
+
+
+
+if __name__ == "__main__":
+    # test the function
+    query = "What is the capital of France?"
+    context_chunks = [
+        {"page_content": "France is a country in Europe. Its capital is Paris."},
+        {"page_content": "The Eiffel Tower is located in Paris, the capital city of France."}
+    ]
+    
+    context_text = "\n".join([chunk["page_content"] for chunk in context_chunks])
+    full_prompt = f"""
+    Based on the following context, answer the question.
+    
+    Context:
+    {context_text}
+    
+    Question: 
+    {query}
+    """
+
+    print("Sending prompt to LLM...")
+    answer = llm_generate(full_prompt)
+    print("Generated Answer:", answer)
