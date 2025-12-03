@@ -26,7 +26,18 @@ def llm_generate(prompt: str, model: str = "granite4:3b") -> str:
     """
     try:
         client = Client()
-        response = client.generate(model=model, prompt=prompt, stream=False)
+        """ 
+            num_ctx, temperature, num_predict
+            explaination in Final_Tutorials 4
+        """
+        response = client.generate(
+            model=model, 
+            prompt=prompt, 
+            stream=False, 
+            options={
+                "temperature": 0.0
+            }
+        )
         return response.get("response", "No response from model.")
     except Exception as e:
         return f"Error using Ollama Python client: {e}"
