@@ -25,7 +25,7 @@ run_results() {
 
     log "[INFO] Checking output format for language: ${language}"
     python ./check_output_format.py \
-        --query_file ./dragonball_dataset2/queries_show/queries_${language}.jsonl \
+        --query_file ./dragonball_dataset/test_queries_${language}.jsonl \
         --processed_file ./predictions/predictions_${language}.jsonl
 
     if [ $? -eq 0 ]; then

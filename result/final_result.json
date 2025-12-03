@@ -3,18 +3,18 @@
     "EIR": 0.029285714285714286,
     "Precision": 0.0,
     "Recall": 0.21904761904761902,
-    "ROUGELScore": 0.0949185104958482,
-    "completeness": 0.4857142857142857,
-    "hallucination": 0.3142857142857142,
-    "irrelevance": 0.19999999999999998
+    "ROUGELScore": 0.08589719073691933,
+    "completeness": 0.3904761904761904,
+    "hallucination": 0.26666666666666666,
+    "irrelevance": 0.34285714285714286
   },
   "score_en.jsonl": {
     "EIR": 0.12260367762128326,
     "Precision": 0.0,
     "Recall": 0.2,
-    "ROUGELScore": 0.27382698244645387,
-    "completeness": 0.39479166666666665,
-    "hallucination": 0.4302083333333333,
-    "irrelevance": 0.175
+    "ROUGELScore": 0.2446101883476886,
+    "completeness": 0.353125,
+    "hallucination": 0.41354166666666664,
+    "irrelevance": 0.23333333333333334
   }
 }

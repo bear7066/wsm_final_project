@@ -1,5 +1,6 @@
 ## 說明
 1. baseline2 can now execute evaluation and checking format by ```run.sh, check_format.sh```
+2. you can change evaluation method by modify the rageval version in ```run.sh```
 
 ### Prerequisites
 
