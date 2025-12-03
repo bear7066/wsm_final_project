@@ -39,7 +39,7 @@ def main(query_path, docs_path, language, output_path):
         # Generate Answer
         prompt_template = select_prompt(query_text, retrieved_chunks) 
         final_prompt = enhanced_prompt(query_text, retrieved_chunks, prompt_template)
-        answer = generate_answer(query_text, retrieved_chunks, prompt= final_prompt)
+        answer = generate_answer(query_text, retrieved_chunks, prompt=final_prompt)
 
         query["prediction"]["content"] = answer
         query["prediction"]["references"] = [retrieved_chunks[0]['page_content']]
