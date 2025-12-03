@@ -41,10 +41,6 @@ def load_ollama_config() -> dict:
     assert "model" in config["ollama"], "Ollama model not specified in config file."
     return config["ollama"]
     
-<<<<<<< Updated upstream
-
-=======
->>>>>>> Stashed changes
 def llm_generate(prompt: str, model: str = "granite4:3b") -> str:
     """
     Sends a prompt to the Ollama model and returns the response.
@@ -83,7 +79,6 @@ if __name__ == "__main__":
         {"page_content": "France is a country in Europe. Its capital is Paris."},
         {"page_content": "The Eiffel Tower is located in Paris, the capital city of France."}
     ]
-<<<<<<< Updated upstream
     
     context_text = "\n".join([chunk["page_content"] for chunk in context_chunks])
     full_prompt = f"""
@@ -98,7 +93,4 @@ if __name__ == "__main__":
 
     print("Sending prompt to LLM...")
     answer = llm_generate(full_prompt)
-=======
-    answer = llm_generate(query, context_chunks)
->>>>>>> Stashed changes
     print("Generated Answer:", answer)
