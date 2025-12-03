@@ -6,7 +6,7 @@ LANGUAGE="auto" # the language of the input data, en or zh
 INPUT_BASE_URL="./data/"
 USE_MODEL="gpt-4o"
 OUTPUT_BASE_URL="./result/intermediate_result/"
-export OPENAI_API_KEY=""
+export OPENAI_API_KEY="YOUR_OPENAI_API_KEY"
 export BASE_URL="" # if none, set to empty string
 # Input files and output file list 
 INPUT_FILES=("example_finance_en_gpt-4o.jsonl") # file name of the input data
