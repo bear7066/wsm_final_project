@@ -1,9 +1,15 @@
 from utils import llm_generate
 
 
-def generate_answer(query, context_chunks, prompt_template):
+def generate_answer(query, context_chunks, prompt_template, language):
     context = "\n\n".join([chunk['page_content'] for chunk in context_chunks])
     prompt_template = prompt_template.replace("{query}", query).replace("{context}", context)
+    
+    if language == 'zh':
+        prompt_template += "\n\nPlease answer in Simplified Chinese."
+    else:
+        prompt_template += "\n\nPlease answer in English."
+        
     # prompt = f"""You are an assistant for question-answering tasks. \
     # Use the following pieces of retrieved context to answer the question. \
     # If you don't know the answer, just say that you don't know. \

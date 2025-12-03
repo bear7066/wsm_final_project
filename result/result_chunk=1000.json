@@ -1,0 +1,20 @@
+{
+  "score_zh.jsonl": {
+    "EIR": 0.029285714285714286,
+    "Precision": 0.0,
+    "Recall": 0.21904761904761902,
+    "ROUGELScore": 0.19046090625788467,
+    "completeness": 0.6761904761904762,
+    "hallucination": 0.047619047619047616,
+    "irrelevance": 0.2761904761904762
+  },
+  "score_en.jsonl": {
+    "EIR": 0.12260367762128326,
+    "Precision": 0.0,
+    "Recall": 0.2,
+    "ROUGELScore": 0.06940397657596767,
+    "completeness": 0.49062500000000003,
+    "hallucination": 0.43124999999999997,
+    "irrelevance": 0.078125
+  }
+}

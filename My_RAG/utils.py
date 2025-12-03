@@ -94,3 +94,92 @@ if __name__ == "__main__":
     print("Sending prompt to LLM...")
     answer = llm_generate(full_prompt)
     print("Generated Answer:", answer)
+
+
+def expand_query(query_text, language):
+    if language == 'zh':
+        prompt = f"You are a search query optimizer. Please generate an expanded query containing synonyms, relevant entities, and keywords based on the user's original query to improve retrieval recall. Output ONLY the expanded keyword string in Simplified Chinese without any explanation or prefix.\n\nOriginal Query: {query_text}\nExpanded Query:"
+    else:
+        prompt = f"You are a search query optimizer. Please generate an expanded query containing synonyms, relevant entities, and keywords based on the user's original query to improve retrieval recall. Output ONLY the expanded keyword string without any explanation or prefix.\n\nOriginal Query: {query_text}\nExpanded Query:"
+    
+    return llm_generate(prompt)
+
+
+def rerank_chunks(query, chunks, language, top_k=5):
+    """
+    Reranks the retrieved chunks using LLM and returns the top_k most relevant chunks.
+    """
+    if not chunks:
+        return []
+        
+    # Prepare the prompt for reranking
+    chunks_text = ""
+    for i, chunk in enumerate(chunks):
+        # Use a simplified representation to save tokens
+        content_preview = chunk['page_content'][:200].replace("\n", " ")
+        chunks_text += f"[{i}] {content_preview}...\n"
+        
+    if language == 'zh':
+        prompt = f"""
+You are a precise document reranking assistant. Please select the top {top_k} most relevant document chunks from the candidates below based on the user's query.
+Output ONLY the list of indices of the most relevant chunks in a JSON array format, e.g., [0, 2, 1]. Order them by relevance from high to low.
+
+Query: {query}
+
+Candidate Document Chunks:
+{chunks_text}
+
+Output (JSON Array ONLY):
+"""
+    else:
+        prompt = f"""
+You are a precise document reranking assistant. Please select the top {top_k} most relevant document chunks from the candidates below based on the user's query.
+Output ONLY the list of indices of the most relevant chunks in a JSON array format, e.g., [0, 2, 1]. Order them by relevance from high to low.
+
+Query: {query}
+
+Candidate Document Chunks:
+{chunks_text}
+
+Output (JSON Array ONLY):
+"""
+
+    response = llm_generate(prompt)
+    
+    # Parse the response to get indices
+    try:
+        # Clean up response to ensure it's a valid list
+        import re
+        import json
+        
+        # Find the first '[' and last ']'
+        start = response.find('[')
+        end = response.rfind(']')
+        
+        if start != -1 and end != -1:
+            json_str = response[start:end+1]
+            indices = json.loads(json_str)
+            
+            # Filter valid indices
+            valid_indices = [idx for idx in indices if isinstance(idx, int) and 0 <= idx < len(chunks)]
+            
+            # Get the actual chunks
+            reranked_chunks = [chunks[idx] for idx in valid_indices]
+            
+            # If we got fewer than top_k, fill with remaining chunks in original order
+            if len(reranked_chunks) < top_k:
+                seen_indices = set(valid_indices)
+                for i in range(len(chunks)):
+                    if i not in seen_indices:
+                        reranked_chunks.append(chunks[i])
+                        if len(reranked_chunks) >= top_k:
+                            break
+                            
+            return reranked_chunks[:top_k]
+        else:
+            print(f"Warning: Could not parse reranking response: {response}")
+            return chunks[:top_k]
+            
+    except Exception as e:
+        print(f"Error parsing reranking response: {e}")
+        return chunks[:top_k]
