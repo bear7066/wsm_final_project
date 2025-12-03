@@ -1,5 +1,7 @@
-jsonlines
-rank_bm25
-jieba
-ollama
-tqdm
+jieba==0.42.1
+jsonlines==4.0.0
+ollama==0.6.1
+pydantic==2.12.4
+PyYAML==6.0.3
+rank_bm25==0.2.2
+tqdm==4.67.1
