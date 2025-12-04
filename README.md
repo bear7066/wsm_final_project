@@ -1,7 +1,11 @@
 ## 說明
 1. this branch have new components: expander, llm_based reranker and english prompt
-2. baseline2 can now execute evaluation and checking format by ```run.sh, check_format.sh```
-3. you can change evaluation method by modify the rageval version in ```run.sh```
+2. baseline2 can now execute main and check format by ```run.sh``` 
+3. you can change evaluation method by modify the rageval version in ```run_test.sh```
+4. this branch have new components: 
+    - query expander
+    - llm based reranker
+    - english prompt
 
 
 ### Prerequisites

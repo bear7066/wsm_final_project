@@ -5,10 +5,7 @@ from generator import generate_answer
 from selector import select_prompt
 from judger import enhanced_prompt
 import argparse, tqdm
-# [GIN] 2025/12/03 - 23:28:56 | 200 | 20.567621792s |       127.0.0.1 | POST     "/api/generate"
-#time=2025-12-03T23:28:56.441+08:00 level=WARN source=runner.go:128 msg="truncating input prompt" limit=4096 prompt=4479 keep=4 new=4096
 
-# 500 150 -> top5
 
 def main(query_path, docs_path, language, output_path):
     # 1. Load Data
