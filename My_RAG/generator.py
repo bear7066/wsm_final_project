@@ -5,7 +5,7 @@ def generate_answer(query, context_chunks, prompt_template, language):
     # context = "\n\n".join([chunk['page_content'] for chunk in context_chunks])
     
     # Truncate context to avoid exceeding token limit (approx 2000 chars safe for 4096 tokens)
-    MAX_CONTEXT_LEN = 2000
+    MAX_CONTEXT_LEN = 3000
     current_context = ""
     for chunk in context_chunks:
         content = chunk['page_content']

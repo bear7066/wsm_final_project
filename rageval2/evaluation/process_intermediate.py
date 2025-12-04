@@ -3,8 +3,14 @@ import os
 from typing import Dict, List, Any
 
 def load_jsonl(file_path: str) -> List[Dict[str, Any]]:
+    data = []
     with open(file_path, 'r', encoding='utf-8') as file:
-        return [json.loads(line) for line in file]
+        for i, line in enumerate(file):
+            try:
+                data.append(json.loads(line))
+            except json.JSONDecodeError as e:
+                print(f"Error decoding JSON in file {file_path} at line {i+1}: {e}")
+    return data
 
 def calculate_averages(data: List[Dict[str, Any]], metric_list: List[str]) -> Dict[str, float]:
     metric_sums = {metric: 0 for metric in metric_list}

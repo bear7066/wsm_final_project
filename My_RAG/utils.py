@@ -78,7 +78,6 @@ def expand_query(query_text, language):
         prompt = f"You are a search query optimizer. Please generate an expanded query containing synonyms, relevant entities, and keywords based on the user's original query to improve retrieval recall. Output ONLY the expanded keyword string in Simplified Chinese without any explanation or prefix.\n\nOriginal Query: {query_text}\nExpanded Query:"
     else:
         prompt = f"You are a search query optimizer. Please generate an expanded query containing synonyms, relevant entities, and keywords based on the user's original query to improve retrieval recall. Output ONLY the expanded keyword string without any explanation or prefix.\n\nOriginal Query: {query_text}\nExpanded Query:"
-    
     return llm_generate(prompt)
 
 
