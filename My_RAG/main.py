@@ -58,7 +58,7 @@ def main(query_path, docs_path, language, output_path):
         query["prediction"]["content"] = answer
         # Modified: Save all retrieved chunks to improve Recall (previously only saved top-1)
         # query["prediction"]["references"] = [chunk['page_content'] for chunk in retrieved_chunks
-        query["prediction"]["references"] = [retrieved_chunks[0]['page_content']]
+        query["prediction"]["references"] = [candidate_chunks[0]['page_content']]
 
     save_jsonl(output_path, queries)
     print("Predictions saved at '{}'".format(output_path))
