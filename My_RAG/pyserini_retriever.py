@@ -42,6 +42,7 @@ class PyseriniRetriever:
         # Initialize searcher
         self.searcher = LuceneSearcher(self.index_dir)
         
+
         # Configure BM25 parameters based on language
         if self.language == "zh":
             # Chinese optimization
