@@ -37,26 +37,31 @@ def main(query_path, docs_path, language, output_path):
         # expanded_query = expand_query(query_text, language)
         # full_query = f"{query_text} {expanded_query}"
         
-        # print(f"\nRetrieving chunks for query: '{query_text}'")
-        # Retrieve Top-10 candidates first
+        """
+        Use retriever(bm25, ...) to get Top-10 candidates
+        """
         candidate_chunks = retriever.retrieve(query_text, top_k=10)
         
-        # Rerank to get Top-5
-        retrieved_chunks = rerank_chunks(query_text, candidate_chunks, language, top_k=5)
+        """
+        Use llm to Rerank to get Top-5
+        """
+        # retrieved_chunks = rerank_chunks(query_text, candidate_chunks, language, top_k=5)
         # print(f"Retrieved {len(retrieved_chunks)} chunks.")
 
-        # 5. 
+        """
+        prompt engineering pipeline
+        """
         # Select prompt template 
         # (optional) enhance prompt        
         # Generate Answer
-        prompt_template = select_prompt(query_text, retrieved_chunks) 
+        prompt_template = select_prompt(query_text, candidate_chunks) 
         # final_prompt = enhanced_prompt(query_text, retrieved_chunks, prompt_template)
-        answer = generate_answer(query_text, retrieved_chunks, prompt_template, language)
+        answer = generate_answer(query_text, candidate_chunks, prompt_template, language)
 
         query["prediction"]["content"] = answer
         # Modified: Save all retrieved chunks to improve Recall (previously only saved top-1)
-        # query["prediction"]["references"] = [retrieved_chunks[0]['page_content']]
-        query["prediction"]["references"] = [chunk['page_content'] for chunk in retrieved_chunks]
+        # query["prediction"]["references"] = [chunk['page_content'] for chunk in retrieved_chunks
+        query["prediction"]["references"] = [retrieved_chunks[0]['page_content']]
 
     save_jsonl(output_path, queries)
     print("Predictions saved at '{}'".format(output_path))
