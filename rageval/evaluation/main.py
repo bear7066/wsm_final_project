@@ -17,9 +17,10 @@ def init_worker(evaluator_names, use_openai=True, model='gpt-4o-mini', version='
     if not evaluators:
         raise ValueError("No correct evaluators are provided")
 
-def process_item(item, language="zh", idx=0):
+def process_item(item, language="zh", idx=0, evaluator_names=None, use_openai=False, model='gpt-4o-mini', version='v1'):
     ground_truth = item["ground_truth"]
-    results = None
+    results = None 
+    init_worker(evaluator_names, use_openai, model, version)
     for evaluator in evaluators:
         result = evaluator(item, ground_truth, results, language=language)
         if evaluator.name != "keypoint_metrics":
@@ -44,12 +45,9 @@ def process_jsonl(input_file, output_file, evaluator_names, num_workers, use_ope
     else:
         items_to_process = [(item, language) for item in items if item["query"]["query_id"] not in processed_ids]
 
-    with ProcessPoolExecutor(
-        max_workers=num_workers,
-        initializer=init_worker,
-        initargs=(evaluator_names, use_openai, model, version)
-    ) as executor:
-        futures = [executor.submit(process_item, item, lang, idx) for idx, (item, lang) in enumerate(items_to_process)]
+    init_worker(evaluator_names, use_openai, model, version)
+    with ProcessPoolExecutor(max_workers=num_workers) as executor:
+        futures = [executor.submit(process_item, item, language, idx, evaluator_names, use_openai, model, version) for idx, (item, language) in enumerate(items_to_process)]
         
         with open(output_file, "a", encoding="utf-8") as f_out:
             for future in tqdm(as_completed(futures), total=len(futures), desc="Processing items"):
@@ -57,6 +55,8 @@ def process_jsonl(input_file, output_file, evaluator_names, num_workers, use_ope
                 if item is not None:
                     f_out.write(json.dumps(item, ensure_ascii=False) + "\n")
                     f_out.flush()
+
+
 
 
 def main():

@@ -1,15 +1,11 @@
-from tqdm import tqdm
-from utils import load_jsonl, save_jsonl
-from chunker import chunk_documents
+from utils import load_jsonl, save_jsonl, expand_query, rerank_chunks
+from chunker import chunk_documents 
 from pyserini_retriever import create_retriever
-#使用pyserini的retriever
-
-#from retriever import Retriever
-
 from generator import generate_answer
 from selector import select_prompt
 from judger import enhanced_prompt
-import argparse
+import argparse, tqdm
+
 
 def main(query_path, docs_path, language, output_path):
     # 1. Load Data
@@ -30,23 +26,39 @@ def main(query_path, docs_path, language, output_path):
     print("Retriever created successfully.")
 
 
-    for query in tqdm(queries, desc="Processing Queries"):
+    for query in tqdm.tqdm(queries, desc="Processing Queries"):
         # 4. Retrieve relevant chunks
         query_text = query['query']['content']
-        # print(f"\nRetrieving chunks for query: '{query_text}'")
-        retrieved_chunks = retriever.retrieve(query_text)
+        
+        # 🌟(optional) Query Expansion
+        # expanded_query = expand_query(query_text, language)
+        # full_query = f"{query_text} {expanded_query}"
+        
+        """
+        Use retriever(bm25, ...) to get Top-10 candidates
+        """
+        candidate_chunks = retriever.retrieve(query_text, top_k=10)
+        
+        """
+        Use llm to Rerank to get Top-5
+        """
+        # retrieved_chunks = rerank_chunks(query_text, candidate_chunks, language, top_k=5)
         # print(f"Retrieved {len(retrieved_chunks)} chunks.")
 
-        # 5. 
+        """
+        prompt engineering pipeline
+        """
         # Select prompt template 
         # (optional) enhance prompt        
         # Generate Answer
-        prompt_template = select_prompt(query_text, retrieved_chunks) 
-        final_prompt = enhanced_prompt(query_text, retrieved_chunks, prompt_template)
-        answer = generate_answer(query_text, retrieved_chunks, prompt= final_prompt)
+        prompt_template = select_prompt(query_text, candidate_chunks) 
+        # final_prompt = enhanced_prompt(query_text, retrieved_chunks, prompt_template)
+        answer = generate_answer(query_text, candidate_chunks, prompt_template, language)
 
         query["prediction"]["content"] = answer
-        query["prediction"]["references"] = [retrieved_chunks[0]['page_content']]
+        # Modified: Save all retrieved chunks to improve Recall (previously only saved top-1)
+        # query["prediction"]["references"] = [chunk['page_content'] for chunk in retrieved_chunks
+        query["prediction"]["references"] = [candidate_chunks[0]['page_content']]
 
     save_jsonl(output_path, queries)
     print("Predictions saved at '{}'".format(output_path))

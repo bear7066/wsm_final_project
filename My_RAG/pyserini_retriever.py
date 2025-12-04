@@ -42,9 +42,14 @@ class PyseriniRetriever:
         # Initialize searcher
         self.searcher = LuceneSearcher(self.index_dir)
         
-        # Configure BM25 parameters (Standard baseline)
-        # k1=1.2, b=0.75 are generally robust defaults
-        self.searcher.set_bm25(k1=1.2, b=0.75)
+
+        # Configure BM25 parameters based on language
+        if self.language == "zh":
+            # Chinese optimization
+            self.searcher.set_bm25(k1=1.2, b=0.3)
+        else:
+            # English/Default optimization
+            self.searcher.set_bm25(k1=0.9, b=0.4)
 
         # Enable RM3 Query Expansion (Improves recall)
         # fb_terms=10: number of expansion terms
