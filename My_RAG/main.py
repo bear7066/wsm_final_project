@@ -1,7 +1,11 @@
 from tqdm import tqdm
 from utils import load_jsonl, save_jsonl
 from chunker import chunk_documents
-from retriever import create_retriever
+from pyserini_retriever import create_retriever
+#使用pyserini的retriever
+
+#from retriever import Retriever
+
 from generator import generate_answer
 from selector import select_prompt
 from judger import enhanced_prompt

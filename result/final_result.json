@@ -1,20 +1,20 @@
 {
   "score_zh.jsonl": {
-    "EIR": 0.029285714285714286,
+    "EIR": 0.07514285714285715,
     "Precision": 0.0,
-    "Recall": 0.21904761904761902,
-    "ROUGELScore": 0.0949185104958482,
-    "completeness": 0.4857142857142857,
-    "hallucination": 0.3142857142857142,
-    "irrelevance": 0.19999999999999998
+    "Recall": 0.2619047619047619,
+    "ROUGELScore": 0.0821615880842033,
+    "completeness": 0.34285714285714286,
+    "hallucination": 0.26666666666666666,
+    "irrelevance": 0.3904761904761905
   },
   "score_en.jsonl": {
-    "EIR": 0.12260367762128326,
+    "EIR": 0.25933255865506366,
     "Precision": 0.0,
-    "Recall": 0.2,
-    "ROUGELScore": 0.27382698244645387,
-    "completeness": 0.39479166666666665,
-    "hallucination": 0.4302083333333333,
-    "irrelevance": 0.175
+    "Recall": 0.46704545454545454,
+    "ROUGELScore": 0.25319850025881974,
+    "completeness": 0.41041666666666665,
+    "hallucination": 0.3645833333333333,
+    "irrelevance": 0.225
   }
 }
