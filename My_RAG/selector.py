@@ -32,6 +32,7 @@ def select_prompt(query: str, context_chunks: list) -> str:
     1. `qa_expert.txt`: Use this when the user asks a **specific question** looking for a precise answer (e.g., "What is the revenue?", "When was the merger?").
     2. `summary_report.txt`: Use this when the user asks for a **summary**, overview, or general understanding of the company (e.g., "Summarize the report", "What happened in 2017?").
     3. `data_extraction.txt`: Use this when the user asks to **extract data**, create a **table**, list specific metrics, or format information structurally (e.g., "Make a table of financial metrics", "List all acquisitions").
+    4. `comparison.txt`: Use this when the user asks to **compare** two or more entities, years, or metrics (e.g., "Compare Company A and B", "Which company had higher revenue?", "Difference between 2017 and 2018").
 
     User Query: "{query}"
     Context Preview: "{context[:300]}..."

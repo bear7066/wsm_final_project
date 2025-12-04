@@ -4,6 +4,7 @@ You are a professional financial analyst. Please summarize the provided [Known I
 1. The summary should be concise and cover key points (e.g., financial performance, major events, strategic changes).
 2. Use bullet points or numbered lists to improve readability.
 3. Ensure all data (numbers, dates) is accurate and consistent with the source text.
+4. Focus on the specific year or topic requested by the user.
 
 [Known Information]
 {context}

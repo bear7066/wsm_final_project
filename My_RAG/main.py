@@ -17,8 +17,13 @@ def main(query_path, docs_path, language, output_path):
 
     # 2. Chunk Documents
     print("Chunking documents...")
+    """
+    # Semantic Chunking
+    from chunker import semantic_chunk_documents
+    chunks = semantic_chunk_documents(docs_for_chunking, language, max_chunk_size=500, similarity_threshold=0.4)
+    """
     # Modified: Increased chunk size to 300 to capture more context
-    chunks = chunk_documents(docs_for_chunking, language, chunk_size=300, chunk_overlap=50)
+    chunks = chunk_documents(docs_for_chunking, language, chunk_size=500, chunk_overlap=100)
     print(f"Created {len(chunks)} chunks.")
 
     # 3. Create Retriever
@@ -43,8 +48,8 @@ def main(query_path, docs_path, language, output_path):
         """
         Use llm to Rerank to get Top-5
         """
-        retrieved_chunks = rerank_chunks(query_text, retrieved_chunks, language, top_k=5)
-        print(f"Retrieved {len(retrieved_chunks)} chunks after reranking.")
+        # retrieved_chunks = rerank_chunks(query_text, retrieved_chunks, language, top_k=5)
+        # print(f"Retrieved {len(retrieved_chunks)} chunks after reranking.")
 
         """
         prompt engineering pipeline
