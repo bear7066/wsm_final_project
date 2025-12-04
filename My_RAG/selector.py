@@ -7,8 +7,8 @@ from utils import llm_generate
 def select_prompt(query: str, context_chunks: list) -> str:
     """Load all templates and use LLM to select the most relevant one."""
     templates = {}
-    script_dir = os.path.dirname(os.path.abspath(__file__))
-    template_dir = os.path.join(script_dir, "template_pool")
+    # Use absolute path based on this file's location
+    template_dir = os.path.join(os.path.dirname(__file__), "template_pool")
     for filename in os.listdir(template_dir):
         if filename.endswith(".txt"):
             with open(os.path.join(template_dir, filename), 'r') as f:

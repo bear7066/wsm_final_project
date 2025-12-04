@@ -1,6 +1,7 @@
 from utils import load_jsonl, save_jsonl, expand_query, rerank_chunks
 from chunker import chunk_documents
-from retriever import create_retriever
+# (normal retriever) from retriever import Retriever 
+from pyserini_retriever import create_retriever
 from generator import generate_answer
 from selector import select_prompt
 from judger import enhanced_prompt
