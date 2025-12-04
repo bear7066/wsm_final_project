@@ -18,7 +18,8 @@ def main(query_path, docs_path, language, output_path):
 
     # 2. Chunk Documents
     print("Chunking documents...")
-    chunks = chunk_documents(docs_for_chunking, language)
+    # Modified: Reduced chunk size to 200 to improve EIR (density of relevant info)
+    chunks = chunk_documents(docs_for_chunking, language, chunk_size=200, chunk_overlap=50)
     print(f"Created {len(chunks)} chunks.")
 
     # 3. Create Retriever
@@ -32,13 +33,13 @@ def main(query_path, docs_path, language, output_path):
         query_text = query['query']['content']
         
         # 🌟(optional) Query Expansion
-        # expanded_query = expand_query(query_text, language)
-        # full_query = f"{query_text} {expanded_query}"
+        expanded_query = expand_query(query_text, language)
+        full_query = f"{query_text} {expanded_query}"
         
         """
         Use retriever(bm25, ...) to get Top-10 candidates
         """
-        candidate_chunks = retriever.retrieve(query_text, top_k=10)
+        retrieved_chunks = retriever.retrieve(full_query, top_k=10)
         
         """
         Use llm to Rerank to get Top-5
@@ -52,17 +53,16 @@ def main(query_path, docs_path, language, output_path):
         # Select prompt template 
         # (optional) enhance prompt        
         # Generate Answer
-        prompt_template = select_prompt(query_text, candidate_chunks) 
+        prompt_template = select_prompt(query_text, retrieved_chunks) 
         # final_prompt = enhanced_prompt(query_text, retrieved_chunks, prompt_template)
-        answer = generate_answer(query_text, candidate_chunks, prompt_template, language)
+        answer = generate_answer(query_text, retrieved_chunks, prompt_template, language)
 
         query["prediction"]["content"] = answer
-        # Modified: Save all retrieved chunks to improve Recall (previously only saved top-1)
-        # query["prediction"]["references"] = [chunk['page_content'] for chunk in retrieved_chunks
-        query["prediction"]["references"] = [candidate_chunks[0]['page_content']]
+        query["prediction"]["references"] = [chunk['page_content'] for chunk in retrieved_chunks[:2]]
 
     save_jsonl(output_path, queries)
     print("Predictions saved at '{}'".format(output_path))
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
