@@ -17,8 +17,8 @@ def main(query_path, docs_path, language, output_path):
 
     # 2. Chunk Documents
     print("Chunking documents...")
-    # Modified: Reduced chunk size to 200 to improve EIR (density of relevant info)
-    chunks = chunk_documents(docs_for_chunking, language, chunk_size=200, chunk_overlap=50)
+    # Modified: Increased chunk size to 300 to capture more context
+    chunks = chunk_documents(docs_for_chunking, language, chunk_size=300, chunk_overlap=50)
     print(f"Created {len(chunks)} chunks.")
 
     # 3. Create Retriever
@@ -36,15 +36,15 @@ def main(query_path, docs_path, language, output_path):
         full_query = f"{query_text} {expanded_query}"
         
         """
-        Use retriever(bm25, ...) to get Top-10 candidates
+        Use retriever(bm25, ...) to get Top-30 candidates
         """
-        retrieved_chunks = retriever.retrieve(full_query, top_k=10)
+        retrieved_chunks = retriever.retrieve(full_query, top_k=30)
         
         """
         Use llm to Rerank to get Top-5
         """
-        # retrieved_chunks = rerank_chunks(query_text, candidate_chunks, language, top_k=5)
-        # print(f"Retrieved {len(retrieved_chunks)} chunks.")
+        retrieved_chunks = rerank_chunks(query_text, retrieved_chunks, language, top_k=5)
+        print(f"Retrieved {len(retrieved_chunks)} chunks after reranking.")
 
         """
         prompt engineering pipeline
