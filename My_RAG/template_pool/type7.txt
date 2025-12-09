@@ -1,0 +1,1 @@
+Think step by step. First, identify the key events mentioned in the context. Second, order them chronologically. Finally, answer the query based on this timeline.

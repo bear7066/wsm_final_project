@@ -1,0 +1,1 @@
+Synthesize information from multiple documents. Remove duplicate information and merge related details into a single coherent paragraph.

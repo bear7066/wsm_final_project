@@ -1,8 +1,10 @@
 from utils import load_jsonl, save_jsonl, expand_query, rerank_chunks
 from chunker import chunk_documents 
-from pyserini_retriever import create_retriever
+from hybrid_retriever import create_retriever
+# from retriever import create_retriever
+# from pyserini_retriever import create_retriever
 from generator import generate_answer
-from selector import select_prompt
+from selector import initialize_classifiers, GetPrompt, select_prompt
 from judger import enhanced_prompt
 import argparse, tqdm
 
@@ -15,54 +17,48 @@ def main(query_path, docs_path, language, output_path):
     print(f"Loaded {len(docs_for_chunking)} documents.")
     print(f"Loaded {len(queries)} queries.")
 
-    # 2. Chunk Documents
+    # 2. Chunk Documents: pure chunk
     print("Chunking documents...")
-    """
-    # Semantic Chunking
-    from chunker import semantic_chunk_documents
-    chunks = semantic_chunk_documents(docs_for_chunking, language, max_chunk_size=500, similarity_threshold=0.4)
-    """
-    # Modified: Increased chunk size to 300 to capture more context
-    chunks = chunk_documents(docs_for_chunking, language, chunk_size=500, chunk_overlap=100)
-    print(f"Created {len(chunks)} chunks.")
+    # Based on analysis: English P99 ref length is ~325 chars, Max is 453. 
+    # 512 ensures full context coverage. Chinese can be smaller (384).
+    chunk_sz = 512 if language == 'en' else 256
+    chunk_op = 100 if language == 'en' else 50
+    chunks = chunk_documents(docs_for_chunking, language, chunk_size=chunk_sz, chunk_overlap=chunk_op)
+    print(f"Created {len(chunks)} chunks (Size: {chunk_sz}, Overlap: {chunk_op}).")
 
     # 3. Create Retriever
     print("Creating retriever...")
     retriever = create_retriever(chunks, language)
     print("Retriever created successfully.")
 
+    q_classifier, d_classifier = initialize_classifiers()
 
     for query in tqdm.tqdm(queries, desc="Processing Queries"):
-        # 4. Retrieve relevant chunks
         query_text = query['query']['content']
+        # no rerank+0.4 0.6, top 3 candidates: hybrid 
         
         # 🌟(optional) Query Expansion
-        expanded_query = expand_query(query_text, language)
-        full_query = f"{query_text} {expanded_query}"
+        # expanded_query = expand_query(query_text, language)
+        
+        # 1. Retrieve Candidates (Top-30)
+        candidates = retriever.retrieve(query_text, top_k=30)
         
         """
-        Use retriever(bm25, ...) to get Top-30 candidates
+        classifier
         """
-        retrieved_chunks = retriever.retrieve(full_query, top_k=30)
-        
-        """
-        Use llm to Rerank to get Top-5
-        """
-        # retrieved_chunks = rerank_chunks(query_text, retrieved_chunks, language, top_k=5)
-        # print(f"Retrieved {len(retrieved_chunks)} chunks after reranking.")
+        # domain = d_classifier.predict(query_text)
+        # query_type = q_classifier.predict(query_text)
+        # gp = GetPrompt(query_text, domain, query_type, retrieved_chunks, language=language)
+        # prompt_template = gp.output() 
+        prompt_template = select_prompt(query_text, language)
 
         """
-        prompt engineering pipeline
+        generator
         """
-        # Select prompt template 
-        # (optional) enhance prompt        
-        # Generate Answer
-        prompt_template = select_prompt(query_text, retrieved_chunks) 
-        # final_prompt = enhanced_prompt(query_text, retrieved_chunks, prompt_template)
-        answer = generate_answer(query_text, retrieved_chunks, prompt_template, language)
+        answer = generate_answer(query_text, candidates, prompt_template, language)
 
         query["prediction"]["content"] = answer
-        query["prediction"]["references"] = [chunk['page_content'] for chunk in retrieved_chunks[:2]]
+        query["prediction"]["references"] = [chunk['page_content'] for chunk in candidates[:3]] 
 
     save_jsonl(output_path, queries)
     print("Predictions saved at '{}'".format(output_path))
