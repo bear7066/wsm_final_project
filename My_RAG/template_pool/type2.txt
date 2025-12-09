@@ -1,0 +1,3 @@
+Compare the entities mentioned in the query.
+Create a comparison list. Compare [Entity A] and [Entity B] based ONLY on the provided context. Focus on differences in [Aspect 1] and [Aspect 2].
+Instruction: Highlight the differences and similarities. Use a structured format (bullet points) for clarity.
