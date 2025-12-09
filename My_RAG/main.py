@@ -43,7 +43,7 @@ def main(query_path, docs_path, language, output_path):
         
         # 2. Rerank Chunks (Top-5)
         # Verify rerank_chunks is imported
-        # retrieved_chunks = rerank_chunks(query_text, candidates, language, top_k=5)
+        retrieved_chunks = rerank_chunks(query_text, candidates, language, top_k=5)
         
         """
         classifier
@@ -57,10 +57,10 @@ def main(query_path, docs_path, language, output_path):
         """
         generator
         """
-        answer = generate_answer(query_text, candidates, prompt_template, language)
+        answer = generate_answer(query_text, retrieved_chunks, prompt_template, language)
 
         query["prediction"]["content"] = answer
-        query["prediction"]["references"] = [chunk['page_content'] for chunk in candidates[:5]]
+        query["prediction"]["references"] = [chunk['page_content'] for chunk in retrieved_chunks] 
 
     save_jsonl(output_path, queries)
     print("Predictions saved at '{}'".format(output_path))
