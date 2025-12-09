@@ -21,9 +21,10 @@ def main(query_path, docs_path, language, output_path):
     print("Chunking documents...")
     # Based on analysis: English P99 ref length is ~325 chars, Max is 453. 
     # 512 ensures full context coverage. Chinese can be smaller (384).
-    chunk_sz = 512 if language == 'en' else 384
-    chunks = chunk_documents(docs_for_chunking, language, chunk_size=chunk_sz, chunk_overlap=100)
-    print(f"Created {len(chunks)} chunks (Size: {chunk_sz}, Overlap: 100).")
+    chunk_sz = 512 if language == 'en' else 256
+    chunk_op = 100 if language == 'en' else 50
+    chunks = chunk_documents(docs_for_chunking, language, chunk_size=chunk_sz, chunk_overlap=chunk_op)
+    print(f"Created {len(chunks)} chunks (Size: {chunk_sz}, Overlap: {chunk_op}).")
 
     # 3. Create Retriever
     print("Creating retriever...")
@@ -34,16 +35,13 @@ def main(query_path, docs_path, language, output_path):
 
     for query in tqdm.tqdm(queries, desc="Processing Queries"):
         query_text = query['query']['content']
+        # no rerank+0.4 0.6, top 3 candidates: hybrid 
         
         # 🌟(optional) Query Expansion
         # expanded_query = expand_query(query_text, language)
         
         # 1. Retrieve Candidates (Top-30)
         candidates = retriever.retrieve(query_text, top_k=30)
-        
-        # 2. Rerank Chunks (Top-5)
-        # Verify rerank_chunks is imported
-        retrieved_chunks = rerank_chunks(query_text, candidates, language, top_k=5)
         
         """
         classifier
@@ -57,10 +55,10 @@ def main(query_path, docs_path, language, output_path):
         """
         generator
         """
-        answer = generate_answer(query_text, retrieved_chunks, prompt_template, language)
+        answer = generate_answer(query_text, candidates, prompt_template, language)
 
         query["prediction"]["content"] = answer
-        query["prediction"]["references"] = [chunk['page_content'] for chunk in retrieved_chunks] 
+        query["prediction"]["references"] = [chunk['page_content'] for chunk in candidates[:3]] 
 
     save_jsonl(output_path, queries)
     print("Predictions saved at '{}'".format(output_path))

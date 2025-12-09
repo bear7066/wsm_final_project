@@ -11,7 +11,7 @@ from typing import List, Dict
 class HybridRetriever:
     """Combines BM25 and Vector search with weighted sum"""
 
-    def __init__(self, chunks, language="en", bm25_weight=0.7, vector_weight=0.3, embedding_model="embeddinggemma:300m"):
+    def __init__(self, chunks, language="en", bm25_weight=0.6, vector_weight=0.4, embedding_model="embeddinggemma:300m"):
         """
         Initialize hybrid retriever.
         
@@ -101,7 +101,7 @@ class HybridRetriever:
         return [self.chunks[idx] for idx, _ in sorted_indices[:top_k]]
 
 
-def create_retriever(chunks, language, bm25_weight=0.7, vector_weight=0.3, embedding_model="embeddinggemma:300m"):
+def create_retriever(chunks, language, bm25_weight=0.6, vector_weight=0.4, embedding_model="embeddinggemma:300m"):
     """
     Create hybrid retriever.
     
