@@ -271,8 +271,21 @@ Example: {{"filename": "qa_expert.txt"}}
             selected_file = "data_extraction.txt"
         else:
             selected_file = "qa_expert.txt"
-            
-    return selected_file
+    
+    # Read the content of the selected file
+    try:
+        import os
+        template_path = os.path.join('My_RAG/template_pool', selected_file)
+        if not os.path.exists(template_path):
+             pass
+             
+        with open(template_path, "r", encoding="utf-8") as f:
+            return f.read()
+    except Exception as e:
+        print(f"Error reading template {selected_file}: {e}")
+        return "Task: Answer the query based on the context.\nContext:\n{context}\nQuery:\n{query}" # Fallback generic prompt
+
+    return ""
 
 
 def initialize_classifiers():

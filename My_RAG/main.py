@@ -60,7 +60,7 @@ def main(query_path, docs_path, language, output_path):
         answer = generate_answer(query_text, candidates, prompt_template, language)
 
         query["prediction"]["content"] = answer
-        query["prediction"]["references"] = [chunk['page_content'] for chunk in candidates[:2]]
+        query["prediction"]["references"] = [chunk['page_content'] for chunk in candidates[:5]]
 
     save_jsonl(output_path, queries)
     print("Predictions saved at '{}'".format(output_path))
