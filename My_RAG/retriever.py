@@ -1,7 +1,8 @@
 from rank_bm25 import BM25Okapi
 import jieba
+import pyserini
 
-class BM25Retriever:
+class Retriever:
     def __init__(self, chunks, language="en"):
         self.chunks = chunks
         self.language = language
@@ -11,6 +12,7 @@ class BM25Retriever:
         else:
             self.tokenized_corpus = [doc.split(" ") for doc in self.corpus]
         self.bm25 = BM25Okapi(self.tokenized_corpus)
+        
 
     def retrieve(self, query, top_k=5):
         if self.language == "zh":
@@ -22,4 +24,4 @@ class BM25Retriever:
 
 def create_retriever(chunks, language):
     """Creates a BM25 retriever from document chunks."""
-    return BM25Retriever(chunks, language)
+    return Retriever(chunks, language)
