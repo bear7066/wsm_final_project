@@ -1,0 +1,2 @@
+This is a complex reasoning question. 
+Instruction: Think step-by-step. Break down the query into sub-questions, find the answer for each in the context, and combine them logically to derive the conclusion.
