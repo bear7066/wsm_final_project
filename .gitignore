@@ -14,3 +14,8 @@ configs/config_local.yaml
 predictions/
 
 .DS_Store
+
+# --- My Local Tools (Do not upload) ---
+history/
+show_history.py
+my_run.sh
