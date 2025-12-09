@@ -1,5 +1,7 @@
 import numpy as np
 import ollama
+from ollama import Client
+from utils import load_ollama_config
 
 class VectorRetriever:
     def __init__(self, chunks, language="en", model_name="gemma:300m"):
@@ -15,14 +17,23 @@ class VectorRetriever:
         self.model_name = model_name
         self.embeddings = []
         
+        # Load config and initialize client
+        try:
+            config = load_ollama_config()
+            self.client = Client(host=config["host"])
+            print(f"VectorRetriever connected to Ollama at {config['host']}")
+        except Exception as e:
+            print(f"Warning: Could not load Ollama config, defaulting to localhost. Error: {e}")
+            self.client = Client()
+
         print(f"Loading Vector Retriever with model: {self.model_name}")
         self._build_index()
 
     def _get_embedding(self, text):
         """Generates embedding for a single text using Ollama."""
         try:
-            # Note: Ollama python client has embeddings support
-            response = ollama.embeddings(model=self.model_name, prompt=text)
+            # Use the initialized client
+            response = self.client.embeddings(model=self.model_name, prompt=text)
             return response.get("embedding")
         except Exception as e:
             print(f"Error getting embedding: {e}")

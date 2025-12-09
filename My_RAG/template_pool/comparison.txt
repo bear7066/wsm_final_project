@@ -8,6 +8,7 @@ Please read the [Known Information] carefully and answer the [User Question] by 
 3. Present the comparison clearly, stating the value/event for each entity.
 4. Conclude which one is "more", "earlier", "higher", etc., as requested.
 5. If data for any entity is missing, explicitly state that it is not found.
+6. Be extremely concise. Avoid verbose explanations unless necessary.
 
 [Known Information]
 {context}

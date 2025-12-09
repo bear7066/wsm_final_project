@@ -54,14 +54,14 @@ def llm_generate(prompt: str, model: str = "granite4:3b") -> str:
         The model's response as a string.
     """
     try:
-        ollama_config = load_ollama_config()
-        client = Client(host=ollama_config["host"])
+        config = load_ollama_config()
+        client = Client(host=config["host"])
         """ 
             num_ctx, temperature, num_predict
             explaination in Final_Tutorials 4
         """
         response = client.generate(
-            model=ollama_config["model"], 
+            model=config["model"], 
             prompt=prompt, 
             stream=False, 
             options={
@@ -165,22 +165,24 @@ Output (JSON Array ONLY):
 if __name__ == "__main__":
     # test the function
     query = "What is the capital of France?"
-    context_chunks = [
-        {"page_content": "France is a country in Europe. Its capital is Paris."},
-        {"page_content": "The Eiffel Tower is located in Paris, the capital city of France."}
-    ]
+    x = expand_query(query, language='en')
+    print(x)
+    # context_chunks = [
+    #     {"page_content": "France is a country in Europe. Its capital is Paris."},
+    #     {"page_content": "The Eiffel Tower is located in Paris, the capital city of France."}
+    # ]
     
-    context_text = "\n".join([chunk["page_content"] for chunk in context_chunks])
-    full_prompt = f"""
-    Based on the following context, answer the question.
+    # context_text = "\n".join([chunk["page_content"] for chunk in context_chunks])
+    # full_prompt = f"""
+    # Based on the following context, answer the question.
     
-    Context:
-    {context_text}
+    # Context:
+    # {context_text}
     
-    Question: 
-    {query}
-    """
+    # Question: 
+    # {query}
+    # """
 
-    print("Sending prompt to LLM...")
-    answer = llm_generate(full_prompt)
-    print("Generated Answer:", answer)
+    # print("Sending prompt to LLM...")
+    # answer = llm_generate(full_prompt)
+    # print("Generated Answer:", answer)
