@@ -9,7 +9,7 @@
 ## 🏗️ 架構設計
 
 ### 核心思路
-```
+```1
 查詢 → BM25 Retriever → Top-K 候選 + 分數
      ↓
      → Vector Retriever → Top-K 候選 + 分數
