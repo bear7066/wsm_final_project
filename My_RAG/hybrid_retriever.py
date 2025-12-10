@@ -8,7 +8,7 @@ from vector_retriever import VectorRetriever
 from typing import List, Dict
 
 # hybrid 0.5, 0.5 normal
-# hybrid 0.6, 0.4 normal
+# hybrid 0.6, 0.4 normal -> best
 #
 # hybrid 0.5 0.5 RRF
 # hybrid 0.6 0.4 RRF
