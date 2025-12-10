@@ -131,8 +131,30 @@ def process_folder(folder_path: str, output_file: str):
         json.dump(results, f, indent=2, ensure_ascii=False)
 
 if __name__ == "__main__":
+    import sys
+    
     folder_path = './result'
-    output_file = './result/final_result.json'
+    
+    # Check if argument is provided
+    if len(sys.argv) > 1:
+        output_name = sys.argv[1]
+    else:
+        # Prompt user
+        print("Enter output filename (default 'final_result.json'): ", end="", flush=True)
+        # Use sys.stdin.readline to be safe in some environments, or just input()
+        try:
+            output_name = input().strip()
+        except EOFError:
+            output_name = ""
+            
+    if not output_name:
+        output_name = 'final_result.json'
+        
+    # If user didn't provide a path, assume it's in result folder
+    if not os.path.dirname(output_name):
+        output_file = os.path.join(folder_path, output_name)
+    else:
+        output_file = output_name
     
     process_folder(folder_path, output_file)
     print(f"Results saved to {output_file}")

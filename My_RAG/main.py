@@ -4,8 +4,7 @@ from hybrid_retriever import create_retriever
 # from retriever import create_retriever
 # from pyserini_retriever import create_retriever
 from generator import generate_answer
-from selector import initialize_classifiers, GetPrompt, select_prompt
-from judger import enhanced_prompt
+from selector import  select_prompt
 import argparse, tqdm
 
 
@@ -34,9 +33,7 @@ def main(query_path, docs_path, language, output_path):
     # q_classifier, d_classifier = initialize_classifiers()
 
     for query in tqdm.tqdm(queries, desc="Processing Queries"):
-        query_text = query['query']['content']
-        # no rerank+0.4 0.6, top 3 candidates: hybrid 
-        
+        query_text = query['query']['content']        
         # 🌟(optional) Query Expansion
         # expanded_query = expand_query(query_text, language)
         
@@ -50,15 +47,18 @@ def main(query_path, docs_path, language, output_path):
         # query_type = q_classifier.predict(query_text)
         # gp = GetPrompt(query_text, domain, query_type, retrieved_chunks, language=language)
         # prompt_template = gp.output() 
+        # 1. Select Prompt
         prompt_template = select_prompt(query_text, language)
 
         """
         generator
         """
-        answer = generate_answer(query_text, candidates, prompt_template, language)
+        # 2. Use top 5 chunks to generate answer
+        top_candidates = candidates[:5] 
+        answer = generate_answer(query_text, top_candidates, prompt_template, language)
 
         query["prediction"]["content"] = answer
-        query["prediction"]["references"] = [chunk['page_content'] for chunk in candidates[:3]] 
+        query["prediction"]["references"] = [chunk['page_content'] for chunk in top_candidates]
 
     save_jsonl(output_path, queries)
     print("Predictions saved at '{}'".format(output_path))
