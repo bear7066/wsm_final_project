@@ -1,8 +1,9 @@
 from utils import load_jsonl, save_jsonl, expand_query, rerank_chunks
 from chunker import chunk_documents 
-# from hybrid_retriever import create_retriever
+from hybrid_retriever import create_retriever
 # from retriever import create_retriever
-from pyserini_retriever import create_retriever
+# from pyserini_retriever import create_retriever
+from reranker import create_reranker
 from generator import generate_answer
 from selector import  select_prompt
 import argparse, tqdm
@@ -30,6 +31,11 @@ def main(query_path, docs_path, language, output_path):
     retriever = create_retriever(chunks, language)
     print("Retriever created successfully.")
 
+    # 4. Create Reranker
+    print("Creating reranker...")
+    reranker = create_reranker()
+    print("Reranker created successfully.")
+
     # q_classifier, d_classifier = initialize_classifiers()
 
     for query in tqdm.tqdm(queries, desc="Processing Queries"):
@@ -37,9 +43,12 @@ def main(query_path, docs_path, language, output_path):
         # 🌟(optional) Query Expansion
         # expanded_query = expand_query(query_text, language)
         
-        # 1. Retrieve Candidates (Top-30)
-        candidates = retriever.retrieve(query_text, top_k=30)
+        # 1. Retrieve Candidates (Top-50 for high recall)
+        candidates = retriever.retrieve(query_text, top_k=50)
         
+        # 2. Rerank Candidates (Top-5 for high precision)
+        top_candidates = reranker.rerank(query_text, candidates, top_k=5)
+
         """
         classifier
         """
@@ -53,8 +62,8 @@ def main(query_path, docs_path, language, output_path):
         """
         generator
         """
-        # 2. Use top 5 chunks to generate answer
-        top_candidates = candidates[:5] 
+        # 3. Use top 5 chunks to generate answer
+        # top_candidates is already size 5
         answer = generate_answer(query_text, top_candidates, prompt_template, language)
 
         query["prediction"]["content"] = answer

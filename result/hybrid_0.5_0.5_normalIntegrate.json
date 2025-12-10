@@ -12,10 +12,10 @@
     "Sentences_F1": 0.0,
     "Words_Precision": 0.37064114051384206,
     "Words_Recall": 0.5024499387389904,
-    "Words_F1": 0.41137102641853385,
+    "Words_F1": 0.4113710264185339,
     "Factual_Score": 0.4,
     "Generation_Total_Score": 0.36011997952116265,
-    "Retrieval_Total_Score": 0.20568551320926692
+    "Retrieval_Total_Score": 0.20568551320926695
   },
   "score_en.jsonl": {
     "EIR": 0.13038713857497386,
