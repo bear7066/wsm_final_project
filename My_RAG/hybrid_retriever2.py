@@ -1,17 +1,13 @@
 """
 Hybrid Retriever: Combines BM25 + Vector Embeddings
-normal
+RRF integration
 """
 
 from retriever import BM25Retriever
 from vector_retriever import VectorRetriever
 from typing import List, Dict
 
-# hybrid 0.5, 0.5 normal
-# hybrid 0.6, 0.4 normal
-#
-# hybrid 0.5 0.5 RRF
-# hybrid 0.6 0.4 RRF
+
 class HybridRetriever:
     """Combines BM25 and Vector search with weighted sum"""
 
@@ -41,20 +37,9 @@ class HybridRetriever:
 
         print("\n✅ Hybrid Retriever ready!")
 
-    def _normalize_scores(self, scores: List[float]) -> List[float]:
-        """Min-max normalization to 0-1"""
-        if not scores or len(scores) == 1:
-            return [1.0] * len(scores)
-
-        min_s, max_s = min(scores), max(scores)
-        if max_s == min_s:
-            return [1.0] * len(scores)
-
-        return [(s - min_s) / (max_s - min_s) for s in scores]
-
     def retrieve(self, query: str, top_k: int = 5, candidate_k: int = None) -> List[Dict]:
         """
-        Hybrid retrieval with score fusion.
+        Hybrid retrieval with Weighted Reciprocal Rank Fusion (RRF).
         
         Args:
             query: Query string
@@ -67,43 +52,37 @@ class HybridRetriever:
         if candidate_k is None:
             candidate_k = top_k * 2
 
-        # Step 1: Get BM25 results
-        bm25_results_with_scores = self.bm25_retriever.retrieve_with_scores(query, top_k=candidate_k)
-        
-        bm25_chunk_scores = {
-            self.chunks.index(chunk): score 
-            for chunk, score in bm25_results_with_scores
-        }
-
-        # Step 2: Get Vector results
+        # Step 1: Get results from both retrievers
+        # We use retrieve_with_scores for consistency, but for RRF we mostly care about the RANK (order)
+        bm25_results = self.bm25_retriever.retrieve_with_scores(query, top_k=candidate_k)
         vector_results = self.vector_retriever.retrieve_with_scores(query, top_k=candidate_k)
-        vector_chunk_scores = {
-            self.chunks.index(chunk): score 
-            for chunk, score in vector_results
-        }
 
-        # Step 3: Merge all unique chunks
-        all_indices = set(bm25_chunk_scores.keys()) | set(vector_chunk_scores.keys())
+        # Step 2: Calculate Weighted RRF
+        # Score = weight * (1 / (rank + k))
+        # k is a smoothing constant, typically 60
+        rrf_k = 60
+        fused_scores = {}
 
-        # Step 4: Normalize scores
-        bm25_list = [bm25_chunk_scores.get(idx, 0) for idx in all_indices]
-        vector_list = [vector_chunk_scores.get(idx, 0) for idx in all_indices]
+        # Process BM25 results
+        for rank, (chunk, _) in enumerate(bm25_results):
+            chunk_idx = self.chunks.index(chunk)
+            if chunk_idx not in fused_scores:
+                fused_scores[chunk_idx] = 0.0
+            fused_scores[chunk_idx] += self.bm25_weight * (1 / (rank + rrf_k))
 
-        norm_bm25 = self._normalize_scores(bm25_list)
-        norm_vector = self._normalize_scores(vector_list)
+        # Process Vector results
+        for rank, (chunk, _) in enumerate(vector_results):
+            chunk_idx = self.chunks.index(chunk)
+            if chunk_idx not in fused_scores:
+                fused_scores[chunk_idx] = 0.0
+            fused_scores[chunk_idx] += self.vector_weight * (1 / (rank + rrf_k))
 
-        # Step 5: Weighted sum
-        combined = {
-            idx: self.bm25_weight * norm_bm25[i] + self.vector_weight * norm_vector[i] 
-            for i, idx in enumerate(all_indices)
-        }
-
-        # Step 6: Sort and return top-k
-        sorted_indices = sorted(combined.items(), key=lambda x: x[1], reverse=True)
+        # Step 3: Sort and return top-k
+        sorted_indices = sorted(fused_scores.items(), key=lambda x: x[1], reverse=True)
         return [self.chunks[idx] for idx, _ in sorted_indices[:top_k]]
 
 
-def create_retriever(chunks, language, bm25_weight=0.6, vector_weight=0.4, embedding_model="embeddinggemma:300m"):
+def create_retriever(chunks, language, bm25_weight=0.5, vector_weight=0.5, embedding_model="embeddinggemma:300m"):
     """
     Create hybrid retriever.
     
@@ -117,7 +96,7 @@ def create_retriever(chunks, language, bm25_weight=0.6, vector_weight=0.4, embed
     Returns:
         HybridRetriever instance
     """
-    print("normal hybrid retriever")
+    print("RRF hybrid retriever")
     return HybridRetriever(chunks, language, bm25_weight, vector_weight, embedding_model)
 
 
@@ -171,8 +150,8 @@ if __name__ == "__main__":
             for r in results:
                 print(f" - {r['page_content']}")
                 
-            self.assertEqual(results[0]['metadata']['id'], 0, "Chunk A should be first due to high BM25 weight")
-            self.assertEqual(results[1]['metadata']['id'], 1)
+            self.assertEqual(results[0]['metadata']['id'], 1, "Chunk B should be first due to RRF consensus (appearing in both)")
+            self.assertEqual(results[1]['metadata']['id'], 0, "Chunk A should be second (High BM25 weight)")
             self.assertEqual(results[2]['metadata']['id'], 2)
 
         @patch('hybrid_retriever.BM25Retriever')
@@ -204,7 +183,9 @@ if __name__ == "__main__":
                 print(f" - {r['page_content']}")
             
             # With B=0.81 and C=0.8 and A=0.2, B should be first.
-            self.assertEqual(results[0]['metadata']['id'], 1, "Chunk B should be first due to mixed high scores")
+            self.assertEqual(results[0]['metadata']['id'], 1, "Chunk B should be first due to RRF consensus")
+            self.assertEqual(results[1]['metadata']['id'], 2, "Chunk C should be second (High Vector weight)")
+            self.assertEqual(results[2]['metadata']['id'], 0)
 
     # Run tests
     unittest.main(argv=['first-arg-is-ignored'], exit=False)
