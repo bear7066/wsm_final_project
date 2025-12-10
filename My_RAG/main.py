@@ -31,7 +31,7 @@ def main(query_path, docs_path, language, output_path):
     retriever = create_retriever(chunks, language)
     print("Retriever created successfully.")
 
-    q_classifier, d_classifier = initialize_classifiers()
+    # q_classifier, d_classifier = initialize_classifiers()
 
     for query in tqdm.tqdm(queries, desc="Processing Queries"):
         query_text = query['query']['content']
