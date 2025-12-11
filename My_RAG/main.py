@@ -50,7 +50,7 @@ def main(query_path, docs_path, language, output_path):
         top_candidates = reranker.rerank(query_text, candidates, top_k=10)
         
         # 3. Reorder Candidates (LLM Sort) -> put most relevant chunks first
-        top_candidates = filter_chunks(query_text, top_candidates, language)
+        top_candidates = reorder_chunks(query_text, top_candidates, language)
 
         """
         classifier

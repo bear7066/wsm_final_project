@@ -22,8 +22,10 @@ def generate_answer(query, context_chunks, prompt_template, language):
     prompt_template = prompt_template.replace("{query}", query).replace("{context}", context)
     
     if language == 'zh':
+        prompt_template += "\n\n请至少综合两条相关片段的信息来回答，不要仅依赖单一片段。"
         prompt_template += "\n\nPlease answer in Simplified Chinese."
     else:
+        prompt_template += "\n\nPlease synthesize information from at least two source fragments if relevant."
         prompt_template += "\n\nPlease answer in English."
         
     # prompt = f"""You are an assistant for question-answering tasks. \
