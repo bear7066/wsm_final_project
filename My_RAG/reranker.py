@@ -1,142 +1,138 @@
 from typing import List, Dict
-from utils import load_ollama_config
-from ollama import Client
-import json
+import requests
+import numpy as np
+import os
 
-class OllamaReranker:
-    def __init__(self, model_name: str = None):
-        """
-        Initialize the Ollama Reranker.
-        Args:
-            model_name: Optional override for the model name. If None, loads from config.
-        """
-        print(f"Loading Ollama Reranker...")
-        try:
-            config = load_ollama_config()
-            self.host = config.get("host")
-            # prioritize argument, then explicitly default to bge-reranker-v2-m3
-            # We ignore config.get("model") because that is usually the LLM (granite), not the reranker.
-            self.model_name = model_name if model_name else "qllama/bge-reranker-v2-m3:latest"
-            
-            self.client = Client(host=self.host)
-            print(f"Ollama Reranker connected to {self.host} using model {self.model_name}")
-        except Exception as e:
-            print(f"Warning: Could not load Ollama config, defaulting to localhost. Error: {e}")
-            self.client = Client()
-            self.model_name = model_name if model_name else "qllama/bge-reranker-v2-m3:latest"
+try:
+    from FlagEmbedding import FlagReranker
+    FLAG_EMBEDDING_AVAILABLE = True
+except ImportError:
+    FLAG_EMBEDDING_AVAILABLE = False
 
-    def _is_chinese(self, text: str) -> bool:
-        """Check if text contains Chinese characters."""
-        for char in text:
-            if '\u4e00' <= char <= '\u9fff':
-                return True
-        return False
+
+class RemoteFlagReranker:
+    """
+    Fake FlagReranker class: same interface as the official one (More information can be found in FlagEmbedding; https://github.com/FlagOpen/FlagEmbedding),
+    but internally calls a remote API.
+    """
+
+    def __init__(self, api_url: str):
+        """
+        api_url: your rerank endpoint
+        """
+        self.api_url = api_url
+
+    def compute_score(self, pairs, max_length=1024):
+        """
+        pairs: list of [text1, text2], same as the official compute_score
+
+        return: score of each pair in np.ndarray, same as the official compute_score
+        """
+        payload = {"pairs": [{"text1": a, "text2": b} for a, b in pairs]}
+
+        resp = requests.post(self.api_url, json=payload)
+        if resp.status_code != 200:
+            raise RuntimeError(f"API request failed ({resp.status_code}): {resp.text}")
+
+        scores = resp.json()["scores"]
+        return np.array(scores)
+
+
+class BGEReranker:
+    def __init__(self, model_name_or_url: str = None, use_remote: bool = False):
+        self.use_remote = use_remote
+        
+        # Default logic for model/url
+        if not model_name_or_url:
+            if self.use_remote:
+                # Default remote URL
+                model_name_or_url = "http://ollama-gateway:11434/rerank"
+            else:
+                # Default local model
+                model_name_or_url = "BAAI/bge-reranker-v2-m3"
+
+        if self.use_remote:
+            print(f"Initializing RemoteFlagReranker with URL: {model_name_or_url}")
+            self.reranker = RemoteFlagReranker(model_name_or_url)
+        else:
+            print(f"Initializing Local FlagReranker with model: {model_name_or_url}")
+            if not FLAG_EMBEDDING_AVAILABLE:
+                raise ImportError("FlagEmbedding is not installed. Please install it or use remote mode.")
+            self.reranker = FlagReranker(model_name_or_url, use_fp16=True)
 
     def rerank(self, query: str, chunks: List[Dict], top_k: int = 5) -> List[Dict]:
-        """
-        Reranks a list of chunks based on the query using Ollama (LLM-based).
-        """
         if not chunks:
             return []
-
-        # Detect language
-        language = 'zh' if self._is_chinese(query) else 'en'
-        
-        # Prepare chunks text
-        chunks_text = ""
-        for i, chunk in enumerate(chunks):
-            # Use a simplified representation to save tokens
-            content_preview = chunk['page_content'][:150].replace("\n", " ")
-            chunks_text += f"[{i}] {content_preview}...\n"
-
-        if language == 'zh':
-            prompt = f"""
-You are a precise document reranking assistant. Please select the top {top_k} most relevant document chunks from the candidates below based on the user's query.
-Output ONLY the list of indices of the most relevant chunks in a JSON array format, e.g., [0, 2, 1]. Order them by relevance from high to low.
-
-Query: {query}
-
-Candidate Document Chunks:
-{chunks_text}
-
-Output (JSON Array ONLY):
-"""
-        else:
-            prompt = f"""
-You are a precise document reranking assistant. Please select the top {top_k} most relevant document chunks from the candidates below based on the user's query.
-Output ONLY the list of indices of the most relevant chunks in a JSON array format, e.g., [0, 2, 1]. Order them by relevance from high to low.
-
-Query: {query}
-
-Candidate Document Chunks:
-{chunks_text}
-
-Output (JSON Array ONLY):
-"""
+            
+        # pairs = [[query, chunk['page_content']] for chunk in chunks]
+        # Use first 2000 chars of chunk content to avoid excessive length, 
+        # though reranker truncates at 1024 tokens anyway.
+        pairs = [[query, chunk['page_content']] for chunk in chunks]
 
         try:
-            response = self.client.generate(
-                model=self.model_name, 
-                prompt=prompt, 
-                stream=False, 
-                options={
-                    "temperature": 0.0,
-                    "num_ctx": 16384  # Increase context window to handle large reranking prompts
-                }
-            )
-            response_text = response.get("response", "")
-            
-            # Parse the response to get indices
-            # Find the first '[' and last ']'
-            start = response_text.find('[')
-            end = response_text.rfind(']')
-            
-            if start != -1 and end != -1:
-                json_str = response_text[start:end+1]
-                indices = json.loads(json_str)
+            if self.use_remote:
+                # Handle batching (limit 32 pairs per call)
+                all_scores = []
+                batch_size = 32
+                for i in range(0, len(pairs), batch_size):
+                    batch = pairs[i:i + batch_size]
+                    try:
+                        scores = self.reranker.compute_score(batch, max_length=1024)
+                        # Ensure scores is a flat array (compute_score might return list of lists for 1 pair?)
+                        # FlagReranker returns list of float or list of list? 
+                        # FlagReranker.compute_score returns np.ndarray.
+                        if isinstance(scores, list):
+                            all_scores.extend(scores)
+                        elif isinstance(scores, np.ndarray):
+                            all_scores.extend(scores.tolist())
+                        else:
+                            all_scores.extend([scores])
+                    except Exception as e:
+                        print(f"Error reranking batch {i // batch_size}: {e}")
+                        # Fallback for failed batch: append -infinity scores
+                        all_scores.extend([-9999.0] * len(batch))
                 
-                # Filter valid indices
-                valid_indices = [idx for idx in indices if isinstance(idx, int) and 0 <= idx < len(chunks)]
-                
-                # Get the actual chunks
-                reranked_chunks = [chunks[idx] for idx in valid_indices]
-                
-                # If we got fewer than top_k, fill with remaining chunks in original order
-                if len(reranked_chunks) < top_k:
-                    seen_indices = set(valid_indices)
-                    for i in range(len(chunks)):
-                        if i not in seen_indices:
-                            reranked_chunks.append(chunks[i])
-                            if len(reranked_chunks) >= top_k:
-                                break
-                                
-                return reranked_chunks[:top_k]
+                final_scores = np.array(all_scores)
             else:
-                print(f"Warning: Could not parse reranking response: {response_text}")
-                return chunks[:top_k]
-                
+                final_scores = self.reranker.compute_score(pairs, max_length=1024)
+                if not isinstance(final_scores, np.ndarray):
+                    final_scores = np.array(final_scores)
+
+            # Sort chunks by score
+            # argsort sorts ascending, so we reverse it
+            sorted_indices = np.argsort(final_scores)[::-1]
+            
+            top_indices = sorted_indices[:top_k]
+            results = [chunks[i] for i in top_indices]
+            
+            return results
+
         except Exception as e:
-            print(f"Error during reranking: {e}")
+            print(f"Reranking failed: {e}. Returning original chunks.")
             return chunks[:top_k]
 
-def create_reranker(reranker_type="ollama"):
-    if reranker_type == "ollama":
-        return OllamaReranker()
-    else:
-        return BGEReranker()
+
+def create_reranker(reranker_type="bge"):
+    # Check env var to force remote mode
+    # 
+    use_remote = True
+    # if os.environ.get("USE_REMOTE_RERANKER") == "true":
+    #     print("USE_REMOTE_RERANKER is/set to true. Using Remote Reranker.")
+    #     use_remote = True
+    # elif not FLAG_EMBEDDING_AVAILABLE:
+    #     print("FlagEmbedding not found. Switching to Remote Reranker.")
+    #     use_remote = True
+    # else:
+    #     use_remote = False
+    
+    return BGEReranker(use_remote=use_remote)
 
 if __name__ == "__main__":
-    # Simple test
+    # Test
     reranker = create_reranker()
-    query = "What is the capital of France?"
-    chunks = [
-        {"page_content": "The Eiffel Tower is in Paris."},
-        {"page_content": "London is the capital of the UK."},
-        {"page_content": "Paris is the capital of France.", "metadata": {"id": 1}},
-        {"page_content": "France is a country in Europe."},
+    pairs = [
+        {"page_content": "machine learning is a field of study..."},
+        {"page_content": "Paris is the capital of France."}
     ]
-    
-    print("\nReranking...")
-    results = reranker.rerank(query, chunks, top_k=2)
-    for r in results:
-        print(f"- {r['page_content']}")
+    results = reranker.rerank("what is machine learning?", pairs, top_k=1)
+    print([r['page_content'] for r in results])
