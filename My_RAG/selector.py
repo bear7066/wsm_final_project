@@ -270,11 +270,22 @@ Example: {{"filename": "qa_expert.txt"}}
         elif "extract" in query.lower() or "list" in query.lower() or "data" in query.lower() or "提取" in query.lower() or "列出" in query.lower():
             selected_file = "data_extraction.txt"
         else:
-            selected_file = "qa_expert.txt"
-    
+            if language == 'zh':
+                selected_file = "ch_qa_expert.txt"
+            else:
+                selected_file = "qa_expert.txt"
     # Read the content of the selected file
     try:
         import os
+        # Adjust filename for Chinese if needed
+        if language == 'zh':
+            # Check if a ch_ prefixed file exists
+            ch_filename = "ch_" + selected_file
+            ch_path = os.path.join('My_RAG/template_pool', ch_filename)
+            if os.path.exists(ch_path):
+                selected_file = ch_filename
+                
+        print(f"\nSelected template: {selected_file}\n")
         template_path = os.path.join('My_RAG/template_pool', selected_file)
         if not os.path.exists(template_path):
              pass

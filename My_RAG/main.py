@@ -1,4 +1,4 @@
-from utils import load_jsonl, save_jsonl, expand_query, rerank_chunks
+from utils import load_jsonl, save_jsonl, expand_query, reorder_chunks
 from chunker import chunk_documents 
 from hybrid_retriever import create_retriever
 # from retriever import create_retriever
@@ -21,8 +21,8 @@ def main(query_path, docs_path, language, output_path):
     print("Chunking documents...")
     # Based on analysis: English P99 ref length is ~325 chars, Max is 453. 
     # 512 ensures full context coverage. Chinese can be smaller (384).
-    chunk_sz = 512 if language == 'en' else 256
-    chunk_op = 100 if language == 'en' else 50
+    chunk_sz = 500 if language == 'en' else 256
+    chunk_op = 150 if language == 'en' else 50
     chunks = chunk_documents(docs_for_chunking, language, chunk_size=chunk_sz, chunk_overlap=chunk_op)
     print(f"Created {len(chunks)} chunks (Size: {chunk_sz}, Overlap: {chunk_op}).")
 
@@ -43,11 +43,14 @@ def main(query_path, docs_path, language, output_path):
         # 🌟(optional) Query Expansion
         # expanded_query = expand_query(query_text, language)
         
-        # 1. Retrieve Candidates (Top-50 for high recall)
+        # 1. Retrieve Candidates (Top-100 for high recall)
         candidates = retriever.retrieve(query_text, top_k=50)
-        
+        # top_candidates = candidates[:5] 
         # 2. Rerank Candidates (Top-5 for high precision)
-        top_candidates = reranker.rerank(query_text, candidates, top_k=5)
+        top_candidates = reranker.rerank(query_text, candidates, top_k=10)
+        
+        # 3. Reorder Candidates (LLM Sort) -> put most relevant chunks first
+        top_candidates = filter_chunks(query_text, top_candidates, language)
 
         """
         classifier
@@ -63,8 +66,8 @@ def main(query_path, docs_path, language, output_path):
         generator
         """
         # 3. Use top 5 chunks to generate answer
-        # top_candidates is already size 5
         answer = generate_answer(query_text, top_candidates, prompt_template, language)
+        # answer = generate_answer(query_text, top_candidates, prompt_template, language)
 
         query["prediction"]["content"] = answer
         query["prediction"]["references"] = [chunk['page_content'] for chunk in top_candidates]

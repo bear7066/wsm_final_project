@@ -82,15 +82,14 @@ class HybridRetriever:
         return [self.chunks[idx] for idx, _ in sorted_indices[:top_k]]
 
 
-def create_retriever(chunks, language, bm25_weight=0.5, vector_weight=0.5, embedding_model="embeddinggemma:300m"):
+def create_retriever(chunks, language, bm25_weight=0.6, vector_weight=0.4, embedding_model="embeddinggemma:300m"):
     """
     Create hybrid retriever.
-    
     Args:
         chunks: List of document chunks
         language: 'en' or 'zh'
-        bm25_weight: Weight for BM25 (default: 0.5)
-        vector_weight: Weight for vector (default: 0.5)
+        bm25_weight: Weight for BM25 (default: 0.7)
+        vector_weight: Weight for vector (default: 0.3)
         embedding_model: Embedding model name (auto-select if None)
         
     Returns:

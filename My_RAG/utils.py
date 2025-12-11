@@ -162,10 +162,102 @@ Output (JSON Array ONLY):
 
 
 
+
+def reorder_chunks(query, chunks, language):
+    """
+    Reorders fragments based on relevance using LLM.
+    Returns the reordered list of fragments. Does not delete any fragments to ensure robustness.
+    """
+    if not chunks:
+        return []
+        
+    # Prepare chunks text
+    chunks_text = ""
+    for i, chunk in enumerate(chunks):
+        content_preview = chunk['page_content'][:400].replace("\n", " ") # Slightly longer preview for better judgment
+        chunks_text += f"[{i}] {content_preview}...\n"
+        
+    if language == 'zh':
+        prompt = f"""
+你是文档相关性排序助手。请根据回答用户问题的相关性，对以下文档片段进行重新排序。
+
+用户问题: {query}
+
+待排序片段:
+{chunks_text}
+
+请分析每个片段与问题的相关性。
+请输出一个 JSON 列表，包含所有片段的索引，按照从最相关到最不相关的顺序排列。
+必须包含所有索引。不要遗漏任何片段。
+
+输出示例: [2, 0, 1]
+输出 (仅 JSON):
+"""
+    else:
+        prompt = f"""
+You are a relevance sorting assistant. Please reorder the following document chunks based on their relevance to answering the user's question.
+
+User Query: {query}
+
+Chunks to Sort:
+{chunks_text}
+
+Analyze the relevance of each chunk.
+Output a JSON list containing ALL chunk indices, ranked from most relevant to least relevant.
+You MUST include ALL indices. Do not omit any chunk.
+
+Example Output: [2, 0, 1]
+Output (JSON Only):
+"""
+
+    response = llm_generate(prompt)
+    
+    # Parse indices
+    try:
+        import json
+        
+        # Simple extraction of list from string
+        start = response.find('[')
+        end = response.rfind(']')
+        
+        if start != -1 and end != -1:
+            json_str = response[start:end+1]
+            indices = json.loads(json_str)
+            
+            # Robust Reordering Logic
+            if isinstance(indices, list):
+                # 1. Get valid indices from LLM
+                valid_indices = [idx for idx in indices if isinstance(idx, int) and 0 <= idx < len(chunks)]
+                
+                # 2. Identify missing indices (those not returned by LLM)
+                seen_indices = set(valid_indices)
+                missing_indices = [i for i in range(len(chunks)) if i not in seen_indices]
+                
+                # 3. Construct final order: Ranked + Missing (appended at end)
+                final_indices = valid_indices + missing_indices
+                
+                # 4. Reorder chunks
+                reordered_chunks = [chunks[idx] for idx in final_indices]
+                
+                return reordered_chunks
+            else:
+                print(f"Warning: LLM returned valid JSON but not a list: {response}")
+                return chunks
+        else:
+            print(f"Warning: Could not parse reordering response: {response}")
+            return chunks # Fallback to original order
+            
+    except Exception as e:
+        print(f"Error parsing reordering response: {e}")
+        return chunks # Fallback to original order
+
+
 if __name__ == "__main__":
     # test the function
-    query = "What is the capital of France?"
-    x = expand_query(query, language='en')
+    # query = "What is the capital of France?"
+    # x = expand_query(query, language='en')
+    query = "比较2017年华夏娱乐有限公司和2018年顶级购物中心的重大资产收购，哪家公司的资产收购金额更大？"
+    x = expand_query(query, language='zh')
     print(x)
     # context_chunks = [
     #     {"page_content": "France is a country in Europe. Its capital is Paris."},
