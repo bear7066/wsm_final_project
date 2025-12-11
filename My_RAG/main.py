@@ -36,8 +36,6 @@ def main(query_path, docs_path, language, output_path):
     reranker = create_reranker()
     print("Reranker created successfully.")
 
-    # q_classifier, d_classifier = initialize_classifiers()
-
     for query in tqdm.tqdm(queries, desc="Processing Queries"):
         query_text = query['query']['content']        
         # 🌟(optional) Query Expansion
