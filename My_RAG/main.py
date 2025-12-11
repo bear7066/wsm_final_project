@@ -1,5 +1,5 @@
 from utils import load_jsonl, save_jsonl, expand_query, reorder_chunks
-from chunker import chunk_documents 
+from chunker import chunk_documents, chunk_documents_original 
 from hybrid_retriever import create_retriever
 # from retriever import create_retriever
 # from pyserini_retriever import create_retriever
@@ -23,7 +23,12 @@ def main(query_path, docs_path, language, output_path):
     # 512 ensures full context coverage. Chinese can be smaller (384).
     chunk_sz = 500 if language == 'en' else 256
     chunk_op = 150 if language == 'en' else 50
-    chunks = chunk_documents(docs_for_chunking, language, chunk_size=chunk_sz, chunk_overlap=chunk_op)
+    if language == 'en':
+        print(f"Using chunk_documents_original for {language}")
+        chunks = chunk_documents(docs_for_chunking, language, chunk_size=chunk_sz, chunk_overlap=chunk_op)
+    else:
+        print(f"Using chunk_documents for {language}")
+        chunks = chunk_documents(docs_for_chunking, language, chunk_size=chunk_sz, chunk_overlap=chunk_op)
     print(f"Created {len(chunks)} chunks (Size: {chunk_sz}, Overlap: {chunk_op}).")
 
     # 3. Create Retriever
@@ -44,8 +49,11 @@ def main(query_path, docs_path, language, output_path):
         # 1. Retrieve Candidates (Top-100 for high recall)
         candidates = retriever.retrieve(query_text, top_k=50)
         # top_candidates = candidates[:5] 
-        # 2. Rerank Candidates (Top-5 for high precision)
-        top_candidates = reranker.rerank(query_text, candidates, top_k=10)
+        if language == 'zh':
+            # 2. Rerank Candidates (Top-5 for high precision)
+            top_candidates = reranker.rerank(query_text, candidates, top_k=10)
+        else:
+            top_candidates = candidates[:5]
         
         # 3. Reorder Candidates (LLM Sort) -> put most relevant chunks first
         top_candidates = reorder_chunks(query_text, top_candidates, language)
