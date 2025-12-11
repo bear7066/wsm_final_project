@@ -1,91 +1,129 @@
-import torch
-from transformers import AutoModelForSequenceClassification, AutoTokenizer
 from typing import List, Dict
+from utils import load_ollama_config
+from ollama import Client
+import json
 
-class BGEReranker:
-    def __init__(self, model_name: str = 'BAAI/bge-reranker-v2-m3', device: str = None):
+class OllamaReranker:
+    def __init__(self, model_name: str = None):
         """
-        Initializes the BGE Reranker (Cross-Encoder).
-        
+        Initialize the Ollama Reranker.
         Args:
-            model_name: HuggingFace model ID.
-            device: 'cuda', 'mps', or 'cpu'. Auto-detected if None.
+            model_name: Optional override for the model name. If None, loads from config.
         """
-        if device:
-            self.device = device
-        else:
-            if torch.cuda.is_available():
-                self.device = 'cuda'
-            elif torch.backends.mps.is_available():
-                self.device = 'mps'
-            else:
-                self.device = 'cpu'
-        
-        print(f"Loading Reranker model '{model_name}' on {self.device}...")
+        print(f"Loading Ollama Reranker...")
         try:
-            self.tokenizer = AutoTokenizer.from_pretrained(model_name)
-            self.model = AutoModelForSequenceClassification.from_pretrained(model_name)
-            self.model.to(self.device)
-            self.model.eval()
-            print("✅ Reranker model loaded successfully.")
+            config = load_ollama_config()
+            self.host = config.get("host")
+            # prioritize argument, then explicitly default to bge-reranker-v2-m3
+            # We ignore config.get("model") because that is usually the LLM (granite), not the reranker.
+            self.model_name = model_name if model_name else "qllama/bge-reranker-v2-m3:latest"
+            
+            self.client = Client(host=self.host)
+            print(f"Ollama Reranker connected to {self.host} using model {self.model_name}")
         except Exception as e:
-            print(f"❌ Error loading reranker model: {e}")
-            raise e
+            print(f"Warning: Could not load Ollama config, defaulting to localhost. Error: {e}")
+            self.client = Client()
+            self.model_name = model_name if model_name else "qllama/bge-reranker-v2-m3:latest"
+
+    def _is_chinese(self, text: str) -> bool:
+        """Check if text contains Chinese characters."""
+        for char in text:
+            if '\u4e00' <= char <= '\u9fff':
+                return True
+        return False
 
     def rerank(self, query: str, chunks: List[Dict], top_k: int = 5) -> List[Dict]:
         """
-        Reranks a list of chunks based on the query using the Cross-Encoder.
-        
-        Args:
-            query: The search query.
-            chunks: List of document chunks (must contain 'page_content').
-            top_k: Number of chunks to return after reranking.
-            
-        Returns:
-            Top-k reranked chunks.
+        Reranks a list of chunks based on the query using Ollama (LLM-based).
         """
         if not chunks:
             return []
-            
-        # Preparing pairs for the model: [[query, doc1], [query, doc2], ...]
-        pairs = [[query, chunk['page_content']] for chunk in chunks]
-        
-        with torch.no_grad():
-            # tokenize
-            inputs = self.tokenizer(
-                pairs, 
-                padding=True, 
-                truncation=True, 
-                return_tensors='pt', 
-                max_length=512
-            )
-            
-            # move to device
-            inputs = {k: v.to(self.device) for k, v in inputs.items()}
-            
-            # inference
-            # BGE-Reranker outputs logits. Higher logit = more relevant.
-            scores = self.model(**inputs, return_dict=True).logits.view(-1,).float()
-            
-        # Convert to numpy/list
-        scores = scores.cpu().numpy().tolist()
-        
-        # Combine chunks with scores
-        scored_chunks = []
-        for i, score in enumerate(scores):
-            scored_chunks.append((chunks[i], score))
-            
-        # Sort by score descending
-        scored_chunks.sort(key=lambda x: x[1], reverse=True)
-        
-        # Debug: Print top 3 scores
-        # print(f"Top 3 Rerank Scores: {[round(s, 4) for _, s in scored_chunks[:3]]}")
-        
-        # Return top_k chunks (stripping scores for compatibility)
-        return [chunk for chunk, _ in scored_chunks[:top_k]]
 
-def create_reranker(model_name="BAAI/bge-reranker-v2-m3"):
-    return BGEReranker(model_name)
+        # Detect language
+        language = 'zh' if self._is_chinese(query) else 'en'
+        
+        # Prepare chunks text
+        chunks_text = ""
+        for i, chunk in enumerate(chunks):
+            # Use a simplified representation to save tokens
+            content_preview = chunk['page_content'][:150].replace("\n", " ")
+            chunks_text += f"[{i}] {content_preview}...\n"
+
+        if language == 'zh':
+            prompt = f"""
+You are a precise document reranking assistant. Please select the top {top_k} most relevant document chunks from the candidates below based on the user's query.
+Output ONLY the list of indices of the most relevant chunks in a JSON array format, e.g., [0, 2, 1]. Order them by relevance from high to low.
+
+Query: {query}
+
+Candidate Document Chunks:
+{chunks_text}
+
+Output (JSON Array ONLY):
+"""
+        else:
+            prompt = f"""
+You are a precise document reranking assistant. Please select the top {top_k} most relevant document chunks from the candidates below based on the user's query.
+Output ONLY the list of indices of the most relevant chunks in a JSON array format, e.g., [0, 2, 1]. Order them by relevance from high to low.
+
+Query: {query}
+
+Candidate Document Chunks:
+{chunks_text}
+
+Output (JSON Array ONLY):
+"""
+
+        try:
+            response = self.client.generate(
+                model=self.model_name, 
+                prompt=prompt, 
+                stream=False, 
+                options={
+                    "temperature": 0.0,
+                    "num_ctx": 16384  # Increase context window to handle large reranking prompts
+                }
+            )
+            response_text = response.get("response", "")
+            
+            # Parse the response to get indices
+            # Find the first '[' and last ']'
+            start = response_text.find('[')
+            end = response_text.rfind(']')
+            
+            if start != -1 and end != -1:
+                json_str = response_text[start:end+1]
+                indices = json.loads(json_str)
+                
+                # Filter valid indices
+                valid_indices = [idx for idx in indices if isinstance(idx, int) and 0 <= idx < len(chunks)]
+                
+                # Get the actual chunks
+                reranked_chunks = [chunks[idx] for idx in valid_indices]
+                
+                # If we got fewer than top_k, fill with remaining chunks in original order
+                if len(reranked_chunks) < top_k:
+                    seen_indices = set(valid_indices)
+                    for i in range(len(chunks)):
+                        if i not in seen_indices:
+                            reranked_chunks.append(chunks[i])
+                            if len(reranked_chunks) >= top_k:
+                                break
+                                
+                return reranked_chunks[:top_k]
+            else:
+                print(f"Warning: Could not parse reranking response: {response_text}")
+                return chunks[:top_k]
+                
+        except Exception as e:
+            print(f"Error during reranking: {e}")
+            return chunks[:top_k]
+
+def create_reranker(reranker_type="ollama"):
+    if reranker_type == "ollama":
+        return OllamaReranker()
+    else:
+        return BGEReranker()
 
 if __name__ == "__main__":
     # Simple test

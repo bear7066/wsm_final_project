@@ -65,7 +65,8 @@ def llm_generate(prompt: str, model: str = "granite4:3b") -> str:
             prompt=prompt, 
             stream=False, 
             options={
-                "temperature": 0.0
+                "temperature": 0.0,
+                "num_ctx": 16384  
             }
         )
         return response.get("response", "No response from model.")
