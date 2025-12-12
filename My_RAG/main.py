@@ -3,7 +3,8 @@ from utils import load_jsonl, save_jsonl
 from chunker import chunk_documents
 # from bm25 import create_retriever
 from hybrid_retriever import create_retriever
-from generator import generate_answer_zh, generate_answer_en
+from selector import select_prompt
+from generator import generate_answer_zh, generate_answer_en, generate_answer
 import argparse
 
 def main(query_path, docs_path, language, output_path):
@@ -35,15 +36,15 @@ def main(query_path, docs_path, language, output_path):
         retrieved_chunks = retriever.retrieve(query_text)
         # print(f"Retrieved {len(retrieved_chunks)} chunks.")
 
-        # 5. Generate Answer
-        # print("Generating answer...")
-        if language == "zh":
-            answer = generate_answer_zh(query_text, retrieved_chunks)
-        else:
-            answer = generate_answer_zh(query_text, retrieved_chunks)
+        # 5. Select Prompt
+        # template_content = select_prompt(query_text)
 
-        query["prediction"]["content"] = answer
-        query["prediction"]["references"] = [retrieved_chunks[0]['page_content']]
+        # 6. Generate Answer
+        # print("Generating answer...") generate_answer_zh is the best till now 
+        answer = generate_answer_zh(query_text, retrieved_chunks)
+        
+        query["prediction"]["content"] = answer # [retrieved_chunks[0]['page_content']]
+        query["prediction"]["references"] =  [chunk['page_content'] for chunk in retrieved_chunks] # exp -> all, exp -> 2, defatul -> 0 
 
     save_jsonl(output_path, queries)
     print("Predictions saved at '{}'".format(output_path))
