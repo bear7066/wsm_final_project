@@ -33,7 +33,7 @@ def test_pipeline():
     # Setup paths
     base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     docs_path = os.path.join(base_dir, 'dragonball_dataset', 'dragonball_docs.jsonl')
-    queries_path = os.path.join(base_dir, 'dragonball_dataset', 'test_queries_zh.jsonl')
+    queries_path = os.path.join(base_dir, 'dragonball_dataset', 'test_queries_en.jsonl')
 
     # 1. Loading Logs
     print(f"Loading docs from {docs_path}...")
@@ -46,10 +46,10 @@ def test_pipeline():
     # 2. Chunking
     print("1. Chunking...")
     # Use 'zh' as the target language since the query is Chinese
-    language = 'zh'
+    language = 'en'
     # Aligning with main.py settings for Chinese
-    chunk_sz = 500 if language == 'en' else 256
-    chunk_op = 150 if language == 'en' else 50
+    chunk_sz = 800 if language == 'en' else 256
+    chunk_op = 200 if language == 'en' else 50
     chunks = chunk_documents(docs, language=language, chunk_size=chunk_sz, chunk_overlap=chunk_op)
     print(f"   -> {len(chunks)} chunks created.")
 
@@ -86,20 +86,19 @@ def test_pipeline():
         query_id = query_obj['query']['query_id']
         
         # DEBUG: Focus on the specific failing query (Query ID 1)
-        if query_id == 1: 
-            continue
+        # if query_id == 1: 
+        #     continue
 
         print(f"\n{'='*50}")
         print(f"[Q{i+1}] ID:{query_id}")
         print(f"Query: {query_text}")
         
         # Step 2: Retrieval (Hybrid)
-        candidates = retriever.retrieve(query_text, top_k=100) 
+        candidates = retriever.retrieve(query_text, top_k=30) 
         
         # Step 3: Reranking (Top-5)
         # Rerank top 50 to get top 5
-        rerank_input = candidates[:50] 
-        reranked_chunks = reranker.rerank(query_text, rerank_input, top_k=10)
+        reranked_chunks = reranker.rerank(query_text, candidates, top_k=10)
         
         print(f"Reordering {len(reranked_chunks)} chunks...")
         reranked_results = reorder_chunks(query_text, reranked_chunks, language)

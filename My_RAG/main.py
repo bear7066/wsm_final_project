@@ -21,11 +21,11 @@ def main(query_path, docs_path, language, output_path):
     print("Chunking documents...")
     # Based on analysis: English P99 ref length is ~325 chars, Max is 453. 
     # 512 ensures full context coverage. Chinese can be smaller (384).
-    chunk_sz = 500 if language == 'en' else 256
-    chunk_op = 150 if language == 'en' else 50
+    chunk_sz = 800 if language == 'en' else 256
+    chunk_op = 200 if language == 'en' else 50
     if language == 'en':
-        print(f"Using chunk_documents_original for {language}")
-        chunks = chunk_documents(docs_for_chunking, language, chunk_size=chunk_sz, chunk_overlap=chunk_op)
+        print(f"Using chunk_documents for {language}")
+        chunks = chunk_documents_original(docs_for_chunking, language, chunk_size=chunk_sz, chunk_overlap=chunk_op)
     else:
         print(f"Using chunk_documents for {language}")
         chunks = chunk_documents(docs_for_chunking, language, chunk_size=chunk_sz, chunk_overlap=chunk_op)
@@ -39,7 +39,7 @@ def main(query_path, docs_path, language, output_path):
     # 4. Create Reranker
     print("Creating reranker...")
     reranker = create_reranker()
-    print("Reranker created successfully.")
+    print("Reranker created successfully.") # new chunk size of en (no reranker)-> 有必要 reranker?@new_chunk.json#L35-36, normal prompt for en 
 
     for query in tqdm.tqdm(queries, desc="Processing Queries"):
         query_text = query['query']['content']        
@@ -51,11 +51,11 @@ def main(query_path, docs_path, language, output_path):
         # top_candidates = candidates[:5] 
         if language == 'zh':
             # 2. Rerank Candidates (Top-5 for high precision)
-            top_candidates = reranker.rerank(query_text, candidates, top_k=10)
+            top_candidates = candidates[:5] # reranker.rerank(query_text, candidates, top_k=10)
         else:
             top_candidates = candidates[:5]
         
-        # 3. Reorder Candidates (LLM Sort) -> put most relevant chunks first
+        # 3. Reorder Candidates (LLM Sort) -> put most relevant chunks first -> 不能開太大？
         top_candidates = reorder_chunks(query_text, top_candidates, language)
 
         """
@@ -72,7 +72,10 @@ def main(query_path, docs_path, language, output_path):
         generator
         """
         # 3. Use top 5 chunks to generate answer
-        answer = generate_answer(query_text, top_candidates, prompt_template, language)
+        if language == "zh":
+            answer = generate_answer(query_text, top_candidates, prompt_template, language)
+        else:
+            answer = generate_answer2(query_text, top_candidates)
         # answer = generate_answer(query_text, top_candidates, prompt_template, language)
 
         query["prediction"]["content"] = answer

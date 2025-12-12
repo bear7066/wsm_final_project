@@ -11,11 +11,24 @@ def load_jsonl(file_path):
             docs.append(obj)
     return docs
 
+# fix syntax error in zh json
+def sanitize_data(data):
+    if isinstance(data, str):
+        # Remove control characters that are not allowed in JSON (keep \n, \r, \t)
+        # 0-8, 11-12, 14-31, 127
+        import re
+        return re.sub(r'[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]', '', data)
+    elif isinstance(data, dict):
+        return {k: sanitize_data(v) for k, v in data.items()}
+    elif isinstance(data, list):
+        return [sanitize_data(item) for item in data]
+    return data
+
 
 def save_jsonl(file_path, data):
     with jsonlines.open(file_path, mode='w') as writer:
         for item in data:
-            writer.write(item)
+            writer.write(sanitize_data(item))
 
 
 def load_ollama_config() -> dict:
