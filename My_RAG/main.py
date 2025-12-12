@@ -1,10 +1,10 @@
 from tqdm import tqdm
 from utils import load_jsonl, save_jsonl
-from chunker import chunk_documents
+from chunker import chunk_documents, recursive_split
 # from bm25 import create_retriever
 from hybrid_retriever import create_retriever
 from selector import select_prompt
-from generator import generate_answer_zh, generate_answer_en, generate_answer
+from generator import generate_answer_zh
 import argparse
 
 def main(query_path, docs_path, language, output_path):
@@ -17,7 +17,7 @@ def main(query_path, docs_path, language, output_path):
 
     # 2. Chunk Documents
     print("Chunking documents...")
-    if language == "en": # best englis chunk -> default
+    if language == "en": # best englis chunk -> default 
         chunks = chunk_documents(docs_for_chunking, language, chunk_size=2000, chunk_overlap=400)
     else:
         chunks = chunk_documents(docs_for_chunking, language, chunk_size=500, chunk_overlap=100)
@@ -43,8 +43,8 @@ def main(query_path, docs_path, language, output_path):
         # print("Generating answer...") generate_answer_zh is the best till now 
         answer = generate_answer_zh(query_text, retrieved_chunks)
         
-        query["prediction"]["content"] = answer # [retrieved_chunks[0]['page_content']]
-        query["prediction"]["references"] =  [chunk['page_content'] for chunk in retrieved_chunks] # exp -> all, exp -> 2, defatul -> 0 
+        query["prediction"]["content"] = answer
+        query["prediction"]["references"] = [retrieved_chunks[0]['page_content']] # exp -> all, exp -> 2, 0 -> best,  [chunk['page_content'] for chunk in retrieved_chunks[:2]] 
 
     save_jsonl(output_path, queries)
     print("Predictions saved at '{}'".format(output_path))
