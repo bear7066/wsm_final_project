@@ -4,7 +4,7 @@ def generate_answer_zh(query, context_chunks):
     # 全部拼接 -> prompt > limit
     # context = "\n\n".join([chunk['page_content'] for chunk in context_chunks])
 
-    MAX_CONTEXT_LEN = 3000
+    MAX_CONTEXT_LEN = 4000
     context_batches = []   
     current_batch = ""     
 
@@ -26,10 +26,19 @@ def generate_answer_zh(query, context_chunks):
     
     answers = []
     for i, batch_context in enumerate(context_batches):
-        prompt = f"""You are an assistant for question-answering tasks. \
-        Use the following pieces of retrieved context to answer the question. \
-        If the answer is not in the context, just say "No relevant information found." \
-        Keep the answer concise.\n\nQuestion: {query} \nContext: {batch_context} \nAnswer:\n"""
+        prompt = f"""You are a precise answering assistant. Please read the following context chunks to answer the user's question.
+
+        User Question: {query}
+
+        Context Chunks:
+        {batch_context}
+
+        Instructions:
+        1. **Strictly** use ONLY the provided context to answer. Do not use outside knowledge or make assumptions.
+        2. If the context is **completely irrelevant** to the question or does not contain the answer, you must strictly output "NO_INFO" only.
+        3. Answer directly and concisely.
+
+        Answer:"""
         
         answer = llm_generate(prompt)
         answers.append(answer)
@@ -98,9 +107,9 @@ def generate_answer(query, context_chunks, template_content=None):
             {context}
             
             Instructions:
-            1. If the context contains the answer or relevant clues, extract the key information and answer concisely.
-            2. If the context is **completely irrelevant** to the question, you must strictly output "NO_INFO" only. Do not provide any other text.
-            3. Answer only based on the provided context. Do not fabricate information.
+            1. **Strictly** use ONLY the provided context to answer. Do not use outside knowledge or make assumptions.
+            2. If the context is **completely irrelevant** to the question or does not contain the answer, you must strictly output "NO_INFO" only.
+            3. Answer directly and concisely.
             
             Answer:"""
             
@@ -124,9 +133,9 @@ def generate_answer(query, context_chunks, template_content=None):
         {batch_context}
         
         Instructions:
-        1. If the context contains the answer or relevant clues, extract the key information and answer concisely.
-        2. If the context is **completely irrelevant** to the question, you must strictly output "NO_INFO" only. Do not provide any other text.
-        3. Answer only based on the provided context. Do not fabricate information.
+        1. **Strictly** use ONLY the provided context to answer. Do not use outside knowledge.
+        2. If the context is **completely irrelevant** to the question, you must strictly output "NO_INFO" only.
+        3. Extract only factual information present in the text.
         
         Answer:"""
         
@@ -182,10 +191,19 @@ def generate_answer(query, context_chunks, template_content=None):
 
 def generate_answer_en(query, context_chunks):
     context = "\n\n".join([chunk['page_content'] for chunk in context_chunks])
-    prompt = f"""You are an assistant for question-answering tasks. \
-Use the following pieces of retrieved context to answer the question. \
-If you don't know the answer, just say that you don't know. \
-Use three sentences maximum and keep the answer concise.\n\nQuestion: {query} \nContext: {context} \nAnswer:\n"""
+    prompt = f"""You are a precise answering assistant. Please read the following context chunks to answer the user's question.
+
+    User Question: {query}
+
+    Context Chunks:
+    {context}
+
+    Instructions:
+    1. **Strictly** use ONLY the provided context to answer. Do not use outside knowledge or make assumptions.
+    2. If the context is **completely irrelevant** to the question or does not contain the answer, you must strictly output "NO_INFO" only.
+    3. Answer directly and concisely.
+
+    Answer:"""
     try:
         response = llm_generate(prompt)
         return response

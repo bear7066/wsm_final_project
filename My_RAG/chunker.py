@@ -1,10 +1,35 @@
 def chunk_documents(docs, language, chunk_size=1000, chunk_overlap=200):
     chunks = []
     for doc_index, doc in enumerate(docs):
+        if 'content' in doc and isinstance(doc['content'], str) and 'language' in doc:
+            text = doc['content']
+            text_len = len(text)
+            lang = doc['language']
+            start_index = 0
+            chunk_count = 0
+            if lang == language:
+                while start_index < text_len:
+                    end_index = min(start_index + chunk_size, text_len)
+                    chunk_metadata = doc.copy()
+                    chunk_metadata.pop('content', None)
+                    chunk_metadata['chunk_index'] = chunk_count
+                    chunk = {
+                        'page_content': text[start_index:end_index],
+                        'metadata': chunk_metadata
+                    }
+                    chunks.append(chunk)
+                    start_index += chunk_size - chunk_overlap
+                    chunk_count += 1
+    return chunks
+# recursive_return_one_chunk.json
+
+def recursive_chunk_documents(docs, language, chunk_size=1000, chunk_overlap=200):
+    chunks = []
+    for doc_index, doc in enumerate(docs):
         if 'content' in doc and isinstance(doc['content'], str):
             text = doc['content']
             # Use recursive chunking for ALL languages
-            text_chunks = recursive_split(text, chunk_size, chunk_overlap)
+            text_chunks = _recursive_split(text, chunk_size, chunk_overlap)
             
             for i, text_chunk in enumerate(text_chunks):
                 chunk_metadata = doc.copy()
@@ -18,7 +43,7 @@ def chunk_documents(docs, language, chunk_size=1000, chunk_overlap=200):
     return chunks
 
 
-def recursive_split(text, chunk_size, chunk_overlap):
+def _recursive_split(text, chunk_size, chunk_overlap):
     separators = ["\n\n", "\n", " ", ""]
     
     def _split_text_recursive(text, separators):

@@ -59,6 +59,9 @@ class VectorRetriever:
         Retrieves top_k chunks based on cosine similarity.
         Returns list of (chunk, score).
         """
+        if self.language == "en":
+            query = query.lower()
+            
         query_emb = self._get_embedding(query)
         if not query_emb:
             return []

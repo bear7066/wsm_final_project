@@ -9,14 +9,14 @@ class BM25Retriever:
         if language == "zh":
             self.tokenized_corpus = [list(jieba.cut(doc)) for doc in self.corpus]
         else:
-            self.tokenized_corpus = [doc.split(" ") for doc in self.corpus]
+            self.tokenized_corpus = [doc.lower().split(" ") for doc in self.corpus]
         self.bm25 = BM25Okapi(self.tokenized_corpus)
 
     def retrieve(self, query, top_k=5):
         if self.language == "zh":
             tokenized_query = list(jieba.cut(query))
         else:
-            tokenized_query = query.split(" ")
+            tokenized_query = query.lower().split(" ")
         top_chunks = self.bm25.get_top_n(tokenized_query, self.chunks, n=top_k)
         return top_chunks
         
@@ -24,7 +24,7 @@ class BM25Retriever:
         if self.language == "zh":
             tokenized_query = list(jieba.cut(query))
         else:
-            tokenized_query = query.split(" ")
+            tokenized_query = query.lower().split(" ")
         
         scores = self.bm25.get_scores(tokenized_query)
         # Get top_k indices
