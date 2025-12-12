@@ -16,7 +16,10 @@ def main(query_path, docs_path, language, output_path):
 
     # 2. Chunk Documents
     print("Chunking documents...")
-    chunks = chunk_documents(docs_for_chunking, language)
+    if language == "en": # best englis chunk -> default
+        chunks = chunk_documents(docs_for_chunking, language, chunk_size=2000, chunk_overlap=400)
+    else:
+        chunks = chunk_documents(docs_for_chunking, language, chunk_size=500, chunk_overlap=100)
     print(f"Created {len(chunks)} chunks.")
 
     # 3. Create Retriever
