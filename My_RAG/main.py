@@ -1,8 +1,9 @@
 from tqdm import tqdm
 from utils import load_jsonl, save_jsonl
 from chunker import chunk_documents
-from retriever import create_retriever
-from generator import generate_answer
+# from bm25 import create_retriever
+from hybrid_retriever import create_retriever
+from generator import generate_answer_zh, generate_answer_en
 import argparse
 
 def main(query_path, docs_path, language, output_path):
@@ -33,7 +34,10 @@ def main(query_path, docs_path, language, output_path):
 
         # 5. Generate Answer
         # print("Generating answer...")
-        answer = generate_answer(query_text, retrieved_chunks)
+        if language == "zh":
+            answer = generate_answer_zh(query_text, retrieved_chunks)
+        else:
+            answer = generate_answer_zh(query_text, retrieved_chunks)
 
         query["prediction"]["content"] = answer
         query["prediction"]["references"] = [retrieved_chunks[0]['page_content']]
