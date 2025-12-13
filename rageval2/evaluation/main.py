@@ -32,6 +32,9 @@ def process_jsonl(input_file, output_file, evaluator_names, num_workers, use_ope
     input_path = Path(input_file)
     output_path = Path(output_file)
 
+    # Ensure output directory exists
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+
     if output_path.exists():
         # delete existing file
         output_path.unlink()

@@ -3,6 +3,7 @@ from utils import load_jsonl, save_jsonl
 from chunker import chunk_documents
 # from bm25 import create_retriever
 from hybrid_retriever import create_retriever
+from reranker import create_reranker
 from selector import select_prompt
 from generator import generate_answer_zh, generate_answer_en, generate_answer
 import argparse
@@ -28,12 +29,22 @@ def main(query_path, docs_path, language, output_path):
     retriever = create_retriever(chunks, language)
     print("Retriever created successfully.")
 
+    # 3.1 Create Reranker
+    print("Creating reranker...")
+    reranker = create_reranker()
+    print("Reranker created successfully.")
 
     for query in tqdm(queries, desc="Processing Queries"):
         # 4. Retrieve relevant chunks
         query_text = query['query']['content']
         # print(f"\nRetrieving chunks for query: '{query_text}'")
-        retrieved_chunks = retriever.retrieve(query_text)
+        
+        # Step 1: Retrieve more candidates (e.g., 50) for reranking
+        candidate_chunks = retriever.retrieve(query_text, top_k=50)
+        
+        # Step 2: Rerank candidates to get top 5
+        retrieved_chunks = reranker.rerank(query_text, candidate_chunks, top_k=5)
+        
         # print(f"Retrieved {len(retrieved_chunks)} chunks.")
 
         # 5. Select Prompt
