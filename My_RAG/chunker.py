@@ -44,7 +44,7 @@ def recursive_chunk_documents(docs, language, chunk_size=1000, chunk_overlap=200
 
 
 def _recursive_split(text, chunk_size, chunk_overlap):
-    separators = ["\n\n", "\n", " ", ""]
+    separators = ["\n\n", "\n", "。", "！", "？", " ", ""]
     
     def _split_text_recursive(text, separators):
         # Determine which separator to use

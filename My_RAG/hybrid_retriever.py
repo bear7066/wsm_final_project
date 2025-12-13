@@ -2,10 +2,7 @@ from bm25 import BM25Retriever
 from gemma_retriever import VectorRetriever
 from typing import List, Dict
 
-# hybrid 0.5, 0.5 normal
-# hybrid 0.6, 0.4 normal -> best
-# hybrid 0.5 0.5 RRF
-# hybrid 0.6 0.4 RRF
+
 class HybridRetriever:
     """Combines BM25 and Vector search with weighted sum"""
 
@@ -97,19 +94,29 @@ class HybridRetriever:
         return [self.chunks[idx] for idx, _ in sorted_indices[:top_k]]
 
 
-def create_retriever(chunks, language, bm25_weight=0.6, vector_weight=0.4, embedding_model="embeddinggemma:300m"):
+def create_retriever(chunks, language, bm25_weight=None, vector_weight=None, embedding_model="embeddinggemma:300m"):
     """
-    Create hybrid retriever.
+    Create hybrid retriever with language-specific weights.
     
     Args:
         chunks: List of document chunks
         language: 'en' or 'zh'
-        bm25_weight: Weight for BM25 (default: 0.5)
-        vector_weight: Weight for vector (default: 0.5)
+        bm25_weight: Weight for BM25 (override default)
+        vector_weight: Weight for vector (override default)
         embedding_model: Embedding model name (auto-select if None)
         
     Returns:
         HybridRetriever instance
     """
-    print("normal hybrid retriever")
+    if bm25_weight is None or vector_weight is None:
+        if language == "zh":
+            # zh -> 0.6 0.4 good
+            bm25_weight = 0.6
+            vector_weight = 0.4
+        else:
+            # en -> 0.5 0.5 good
+            bm25_weight = 0.5
+            vector_weight = 0.5
+
+    print(f"Creating Hybrid Retriever for {language} with weights - BM25: {bm25_weight}, Vector: {vector_weight}")
     return HybridRetriever(chunks, language, bm25_weight, vector_weight, embedding_model)

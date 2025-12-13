@@ -9,6 +9,12 @@ import argparse
 
 # english -> zh -> recursive
 
+"""
+Top-3: S_Prec=0.0000, S_Rec=0.0000, W_Prec=0.1849, W_Rec=0.6829
+Top-5: S_Prec=0.0000, S_Rec=0.0000, W_Prec=0.1642, W_Rec=0.7424
+Testing Config: Chunk Size=256, Overlap=100
+"""
+
 def main(query_path, docs_path, language, output_path):
     # 1. Load Data
     print("Loading documents...")
@@ -20,9 +26,9 @@ def main(query_path, docs_path, language, output_path):
     # 2. Chunk Documents
     print("Chunking documents...")
     if language == "en": 
-        chunks = chunk_documents(docs_for_chunking, language, chunk_size=2000, chunk_overlap=400)
+        chunks = chunk_documents(docs_for_chunking, language, chunk_size=2000, chunk_overlap=400) # en 那麼 irr, hallu 高可能是 chunk size 1000 150
     else:
-        chunks = recursive_chunk_documents(docs_for_chunking, language, chunk_size=500, chunk_overlap=100)
+        chunks = recursive_chunk_documents(docs_for_chunking, language, chunk_size=500, chunk_overlap=100) # 256 100. testing
     print(f"Created {len(chunks)} chunks.")
 
     # 3. Create Retriever
@@ -44,12 +50,10 @@ def main(query_path, docs_path, language, output_path):
         # 6. Generate Answer
         # print("Generating answer...") generate_answer_zh is the best till now 
         # 有可能兩個都 recursive 不錯, irrelanvance en 超高
-        """
-        1. recursive zh, normal en. 2. 斷詞->bm25, lowercase ->gemma 
-        """
-        if language == "zh":
+        if language == "zh": # hybrid 0.6, 0.4, ✅0.5 0.5, ✅0.4 0.6, ✅0.3 0.7, bm25vector
+            # 🌟就這樣：-> zh -> 0.6 0.4 good, en -> 0.5 0.5 good
             answer = generate_answer(query_text, retrieved_chunks) # zh -> this generator is good 
-        else:
+        else: # en generator which one is good???
             answer = generate_answer_zh(query_text, retrieved_chunks)
         
         query["prediction"]["content"] = answer
