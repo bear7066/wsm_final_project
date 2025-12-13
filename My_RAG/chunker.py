@@ -28,8 +28,8 @@ def recursive_chunk_documents(docs, language, chunk_size=1000, chunk_overlap=200
     for doc_index, doc in enumerate(docs):
         if 'content' in doc and isinstance(doc['content'], str):
             text = doc['content']
-            # Use recursive chunking for ALL languages
-            text_chunks = _recursive_split(text, chunk_size, chunk_overlap)
+            # Use recursive chunking for ALL languages, pass language param
+            text_chunks = _recursive_split(text, chunk_size, chunk_overlap, language=language)
             
             for i, text_chunk in enumerate(text_chunks):
                 chunk_metadata = doc.copy()
@@ -43,8 +43,21 @@ def recursive_chunk_documents(docs, language, chunk_size=1000, chunk_overlap=200
     return chunks
 
 
-def _recursive_split(text, chunk_size, chunk_overlap):
-    separators = ["\n\n", "\n", "。", "！", "？", " ", ""]
+def _recursive_split(text, chunk_size, chunk_overlap, language="en"):
+    if language == "zh":
+        separators = ["\n\n", "\n", "。", "！", "？", " ", ""]
+    else:
+        # Optimized separators for English as requested
+        separators = [
+            "\n\n",  # 1. Paragraphs
+            "\n",    # 2. Lines
+            ". ",    # 3. Sentences (Dot + Space)
+            "? ",    # 4. Questions
+            "! ",    # 5. Exclamations
+            "; ",    # 6. Semicolons
+            " ",     # 7. Words
+            ""       # 8. Characters
+        ]
     
     def _split_text_recursive(text, separators):
         # Determine which separator to use

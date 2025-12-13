@@ -77,7 +77,6 @@ def process_folder(folder_path: str, output_file: str):
     # Extended metric list including new ones
     base_metrics = ['EIR', 'Precision', 'Recall', 'ROUGELScore', "completeness", "hallucination", "irrelevance"]
     new_metrics = [
-        "Sentences_Precision", "Sentences_Recall", "Sentences_F1",
         "Words_Precision", "Words_Recall", "Words_F1"
     ]
     all_metrics_to_avg = base_metrics + new_metrics
@@ -95,11 +94,7 @@ def process_folder(folder_path: str, output_file: str):
                 prediction = item.get("prediction", {}).get("content", "")
                 ground_truth = item.get("ground_truth", {}).get("content", "")
                 
-                # Sentence Metrics
-                s_prec, s_rec, s_f1 = calculate_overlap_metrics(prediction, ground_truth, 'sentences', language)
-                item["Sentences_Precision"] = s_prec
-                item["Sentences_Recall"] = s_rec
-                item["Sentences_F1"] = s_f1
+
                 
                 # Word Metrics
                 w_prec, w_rec, w_f1 = calculate_overlap_metrics(prediction, ground_truth, 'words', language)
@@ -121,9 +116,8 @@ def process_folder(folder_path: str, output_file: str):
             words_f1 = averages.get("Words_F1", 0.0)
             averages["Generation_Total_Score"] = np.mean([rouge, factual, words_f1])
             
-            # Retrieval_Total_Score = Mean(Sentences_F1, Words_F1) -- per previous decision
-            sentences_f1 = averages.get("Sentences_F1", 0.0)
-            averages["Retrieval_Total_Score"] = (sentences_f1 + words_f1) / 2
+            # Retrieval_Total_Score = Words_F1 (since Sentence metrics are removed)
+            averages["Retrieval_Total_Score"] = words_f1
 
             results[filename] = averages
     

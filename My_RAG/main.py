@@ -23,12 +23,13 @@ def main(query_path, docs_path, language, output_path):
     print(f"Loaded {len(docs_for_chunking)} documents.")
     print(f"Loaded {len(queries)} queries.")
 
-    # 2. Chunk Documents
+    # 2. Chunk Documents ori_newG_newChunk_en_1000,100.json
     print("Chunking documents...")
     if language == "en": 
-        chunks = chunk_documents(docs_for_chunking, language, chunk_size=2000, chunk_overlap=400) # en 那麼 irr, hallu 高可能是 chunk size 1000 150
-    else:
-        chunks = recursive_chunk_documents(docs_for_chunking, language, chunk_size=500, chunk_overlap=100) # 256 100. testing
+        # Optimize: Use recursive chunking for EN as well to respect sentence boundaries
+        chunks = recursive_chunk_documents(docs_for_chunking, language, chunk_size=2000, chunk_overlap=400) 
+    else:# 500 100 good!
+        chunks = recursive_chunk_documents(docs_for_chunking, language, chunk_size=256, chunk_overlap=100)
     print(f"Created {len(chunks)} chunks.")
 
     # 3. Create Retriever
@@ -41,7 +42,9 @@ def main(query_path, docs_path, language, output_path):
         # 4. Retrieve relevant chunks
         query_text = query['query']['content']
         # print(f"\nRetrieving chunks for query: '{query_text}'")
-        retrieved_chunks = retriever.retrieve(query_text)
+        # Optimize: Increase top_k to 10 for English to improve recall of scattered details
+        k = 10 # en zh 5 best 
+        retrieved_chunks = retriever.retrieve(query_text, top_k=k)
         # print(f"Retrieved {len(retrieved_chunks)} chunks.")
 
         # 5. Select Prompt
@@ -50,14 +53,16 @@ def main(query_path, docs_path, language, output_path):
         # 6. Generate Answer
         # print("Generating answer...") generate_answer_zh is the best till now 
         # 有可能兩個都 recursive 不錯, irrelanvance en 超高
-        if language == "zh": # hybrid 0.6, 0.4, ✅0.5 0.5, ✅0.4 0.6, ✅0.3 0.7, bm25vector
-            # 🌟就這樣：-> zh -> 0.6 0.4 good, en -> 0.5 0.5 good
-            answer = generate_answer(query_text, retrieved_chunks) # zh -> this generator is good 
-        else: # en generator which one is good???
-            answer = generate_answer_zh(query_text, retrieved_chunks)
+        if language == "zh": 
+            # zh -> 0.6 0.4 good, en -> 0.5 0.5 good
+            # For ZH, use the generator that works best (originally generate_answer)
+            answer = generate_answer(query_text, retrieved_chunks) 
+        else: 
+            # For EN, use the English-specific generator or default
+            answer = generate_answer_en(query_text, retrieved_chunks)
         
         query["prediction"]["content"] = answer
-        query["prediction"]["references"] = [retrieved_chunks[0]['page_content']] # exp -> all, exp -> 2, 0 -> best,  [chunk['page_content'] for chunk in retrieved_chunks[:2]] 
+        query["prediction"]["references"] = [chunk['page_content'] for chunk in retrieved_chunks[:5]] # Keep ref count reasonable 
 
     save_jsonl(output_path, queries)
     print("Predictions saved at '{}'".format(output_path))

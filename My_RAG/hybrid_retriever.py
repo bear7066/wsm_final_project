@@ -94,7 +94,7 @@ class HybridRetriever:
         return [self.chunks[idx] for idx, _ in sorted_indices[:top_k]]
 
 
-def create_retriever(chunks, language, bm25_weight=None, vector_weight=None, embedding_model="embeddinggemma:300m"):
+def create_retriever(chunks, language, bm25_weight=None, vector_weight=None, embedding_model=None):
     """
     Create hybrid retriever with language-specific weights.
     
@@ -117,6 +117,14 @@ def create_retriever(chunks, language, bm25_weight=None, vector_weight=None, emb
             # en -> 0.5 0.5 good
             bm25_weight = 0.5
             vector_weight = 0.5
+            
+    # 
+    if embedding_model is None:
+        if language == "zh":
+            embedding_model = "qwen3-embedding:0.6b"
+        else:
+            embedding_model = "embeddinggemma:300m"
 
     print(f"Creating Hybrid Retriever for {language} with weights - BM25: {bm25_weight}, Vector: {vector_weight}")
+    print(f"Using Embedding Model: {embedding_model}")
     return HybridRetriever(chunks, language, bm25_weight, vector_weight, embedding_model)
