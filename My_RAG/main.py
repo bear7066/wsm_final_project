@@ -48,12 +48,12 @@ def main(query_path, docs_path, language, output_path):
         query_text = query['query']['content']
         # print(f"\nRetrieving chunks for query: '{query_text}'")
         # Optimize: Increase top_k to 10 for English to improve recall of scattered details
-        if language == "zh": 
-            k = 5 # en zh 5 best 
-        else:
-            k = 10
-        retrieved_chunks = retriever.retrieve(query_text, top_k=k)
-        retrieved_chunks = reranker.rerank(query_text, retrieved_chunks, top_k=5)
+        # if language == "zh": 
+        #     k = 5 # en zh 5 best 
+        # else:
+        #     k = 10
+        retrieved_chunks = retriever.retrieve(query_text, top_k=30)
+        retrieved_chunks = reranker.rerank(query_text, retrieved_chunks, top_k=10)
 
         # candidates = retriever.retrieve(query_text, top_k=30)
         # print(f"Retrieved {len(retrieved_chunks)} chunks.")
@@ -67,15 +67,15 @@ def main(query_path, docs_path, language, output_path):
         if language == "zh": 
             # zh -> 0.6 0.4 good, en -> 0.5 0.5 good
             # For ZH, use the generator that works best (originally generate_answer)
-            answer = generate_answer(query_text, retrieved_chunks) 
+            answer = generate_answer(query_text, retrieved_chunks[:5]) 
         else: 
             # For EN, use the English-specific generator or default 
-            answer = generate_answer_en(query_text, retrieved_chunks)
+            answer = generate_answer_en(query_text, retrieved_chunks[:5])
         
         query["prediction"]["content"] = answer
         # query["prediction"]["references"] = [retrieved_chunks[0]['page_content']] # one chunk, 
         query["prediction"]["references"] = [chunk['page_content'] for chunk in retrieved_chunks[:5]]
-        # Keep ref count reasonable： 12/13 交的是這個
+        # Keep ref count reasonable： 12/13 交的是這個, ori_reranker.json
 
     save_jsonl(output_path, queries)
     print("Predictions saved at '{}'".format(output_path))
