@@ -5,6 +5,7 @@ from chunker import chunk_documents, recursive_chunk_documents
 from hybrid_retriever import create_retriever
 from selector import select_prompt
 from generator import generate_answer_zh, generate_answer_en, generate_answer
+from reranker import create_reranker
 import argparse
 
 # english -> zh -> recursive
@@ -29,7 +30,7 @@ def main(query_path, docs_path, language, output_path):
         # Optimize: Use recursive chunking for EN as well to respect sentence boundaries
         chunks = recursive_chunk_documents(docs_for_chunking, language, chunk_size=2000, chunk_overlap=400) 
     else:# 500 100 good!
-        chunks = recursive_chunk_documents(docs_for_chunking, language, chunk_size=256, chunk_overlap=100)
+        chunks = recursive_chunk_documents(docs_for_chunking, language, chunk_size=500, chunk_overlap=100)
     print(f"Created {len(chunks)} chunks.")
 
     # 3. Create Retriever
@@ -37,14 +38,24 @@ def main(query_path, docs_path, language, output_path):
     retriever = create_retriever(chunks, language)
     print("Retriever created successfully.")
 
+    print("Creating reranker...")
+    reranker = create_reranker()
+    print("Reranker created successfully.")
+
 
     for query in tqdm(queries, desc="Processing Queries"):
         # 4. Retrieve relevant chunks
         query_text = query['query']['content']
         # print(f"\nRetrieving chunks for query: '{query_text}'")
         # Optimize: Increase top_k to 10 for English to improve recall of scattered details
-        k = 10 # en zh 5 best 
+        if language == "zh": 
+            k = 5 # en zh 5 best 
+        else:
+            k = 10
         retrieved_chunks = retriever.retrieve(query_text, top_k=k)
+        retrieved_chunks = reranker.rerank(query_text, retrieved_chunks, top_k=5)
+
+        # candidates = retriever.retrieve(query_text, top_k=30)
         # print(f"Retrieved {len(retrieved_chunks)} chunks.")
 
         # 5. Select Prompt
@@ -58,11 +69,13 @@ def main(query_path, docs_path, language, output_path):
             # For ZH, use the generator that works best (originally generate_answer)
             answer = generate_answer(query_text, retrieved_chunks) 
         else: 
-            # For EN, use the English-specific generator or default
+            # For EN, use the English-specific generator or default 
             answer = generate_answer_en(query_text, retrieved_chunks)
         
         query["prediction"]["content"] = answer
-        query["prediction"]["references"] = [chunk['page_content'] for chunk in retrieved_chunks[:5]] # Keep ref count reasonable 
+        # query["prediction"]["references"] = [retrieved_chunks[0]['page_content']] # one chunk, 
+        query["prediction"]["references"] = [chunk['page_content'] for chunk in retrieved_chunks[:5]]
+        # Keep ref count reasonable： 12/13 交的是這個
 
     save_jsonl(output_path, queries)
     print("Predictions saved at '{}'".format(output_path))

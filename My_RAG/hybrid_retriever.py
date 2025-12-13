@@ -110,7 +110,7 @@ def create_retriever(chunks, language, bm25_weight=None, vector_weight=None, emb
     """
     if bm25_weight is None or vector_weight is None:
         if language == "zh":
-            # zh -> 0.6 0.4 good
+            # zh -> 0.6 0.4 good 0.5 0.5, 0.4 0.6
             bm25_weight = 0.6
             vector_weight = 0.4
         else:

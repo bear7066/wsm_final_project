@@ -47,17 +47,18 @@ def _recursive_split(text, chunk_size, chunk_overlap, language="en"):
     if language == "zh":
         separators = ["\n\n", "\n", "。", "！", "？", " ", ""]
     else:
+        separators = ["\n\n", "\n", "。", "！", "？", " ", ""]
         # Optimized separators for English as requested
-        separators = [
-            "\n\n",  # 1. Paragraphs
-            "\n",    # 2. Lines
-            ". ",    # 3. Sentences (Dot + Space)
-            "? ",    # 4. Questions
-            "! ",    # 5. Exclamations
-            "; ",    # 6. Semicolons
-            " ",     # 7. Words
-            ""       # 8. Characters
-        ]
+        # separators = [
+        #     "\n\n",  # 1. Paragraphs
+        #     "\n",    # 2. Lines
+        #     ". ",    # 3. Sentences (Dot + Space)
+        #     "? ",    # 4. Questions
+        #     "! ",    # 5. Exclamations
+        #     "; ",    # 6. Semicolons
+        #     " ",     # 7. Words
+        #     ""       # 8. Characters
+        # ]
     
     def _split_text_recursive(text, separators):
         # Determine which separator to use
