@@ -23,7 +23,7 @@ def main():
 
     # strict configuration from main.py for EN
     # main.py line 29: recursive_chunk_documents, chunk_size=2000, chunk_overlap=400
-    chunk_configs = [(2000, 400)]
+    chunk_configs = [(500, 100)]
 
     for chunk_size, chunk_overlap in chunk_configs:
         print("\n" + "#"*50)
@@ -54,7 +54,7 @@ def main():
             for j, chunk in enumerate(retrieved_chunks[:5]):
                 content = chunk.get('page_content', '')
                 # Display first 200 chars
-                display_content = content[:200] + "..." if len(content) > 200 else content
+                display_content = content[:350] + "..." if len(content) > 350 else content
                 print(f"  [{j+1}]: {display_content}")
                 print(f"       (Source ID: {chunk.get('metadata', {}).get('doc_id', 'N/A')})")
                 

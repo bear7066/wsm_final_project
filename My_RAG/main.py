@@ -28,7 +28,7 @@ def main(query_path, docs_path, language, output_path):
     print("Chunking documents...")
     if language == "en": 
         # Optimize: Use recursive chunking for EN as well to respect sentence boundaries
-        chunks = recursive_chunk_documents(docs_for_chunking, language, chunk_size=2000, chunk_overlap=400) 
+        chunks = recursive_chunk_documents(docs_for_chunking, language, chunk_size=500, chunk_overlap=100) 
     else:# 500 100 good!
         chunks = recursive_chunk_documents(docs_for_chunking, language, chunk_size=500, chunk_overlap=100)
     print(f"Created {len(chunks)} chunks.")
@@ -70,12 +70,12 @@ def main(query_path, docs_path, language, output_path):
             answer = generate_answer(query_text, retrieved_chunks[:5]) 
         else: 
             # For EN, use the English-specific generator or default 
-            answer = generate_answer_en(query_text, retrieved_chunks[:5])
+            answer = generate_answer_en(query_text, retrieved_chunks[:5]) # retrieval score -> Reranker, generation -> prompt
         
         query["prediction"]["content"] = answer
         # query["prediction"]["references"] = [retrieved_chunks[0]['page_content']] # one chunk, 
-        query["prediction"]["references"] = [chunk['page_content'] for chunk in retrieved_chunks[:5]]
-        # Keep ref count reasonable： 12/13 交的是這個, ori_reranker.json
+        query["prediction"]["references"] = [chunk['page_content'] for chunk in retrieved_chunks]
+        # 3 or all chunks
 
     save_jsonl(output_path, queries)
     print("Predictions saved at '{}'".format(output_path))

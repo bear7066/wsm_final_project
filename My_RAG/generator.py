@@ -136,6 +136,8 @@ def generate_answer(query, context_chunks, template_content=None):
         1. **Strictly** use ONLY the provided context to answer. Do not use outside knowledge.
         2. If the context is **completely irrelevant** to the question, you must strictly output "NO_INFO" only.
         3. Extract only factual information present in the text.
+        4. Please answer all aspects of the user's question.
+        5. Answer directly and concisely.
         
         Answer:"""
         
@@ -191,18 +193,18 @@ def generate_answer(query, context_chunks, template_content=None):
 
 def generate_answer_en(query, context_chunks):
     context = "\n\n".join([chunk['page_content'] for chunk in context_chunks])
-    prompt = f"""You are a precise answering assistant. Please read the following context chunks to answer the user's question.
-
+    prompt = f"""You are a helpful assistant found of precise and faithful answers. 
+    Your task is to answer the User Question using ONLY the information provided in the Context Chunks below.
+    
     User Question: {query}
 
     Context Chunks:
     {context}
-
     Instructions:
     1. **Strictly** use ONLY the provided context to answer. Do not use outside knowledge or make assumptions.
     2. If the context is **completely irrelevant** to the question or does not contain the answer, you must strictly output "NO_INFO" only.
     3. Answer directly and concisely.
-
+    
     Answer:"""
     try:
         response = llm_generate(prompt)
