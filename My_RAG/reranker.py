@@ -115,7 +115,7 @@ class BGEReranker:
 def create_reranker(reranker_type="bge"):
     # Check env var to force remote mode
     # 
-    use_remote = False
+    use_remote = True
     # if os.environ.get("USE_REMOTE_RERANKER") == "true":
     #     print("USE_REMOTE_RERANKER is/set to true. Using Remote Reranker.")
     #     use_remote = True
