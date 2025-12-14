@@ -113,6 +113,8 @@ def generate_answer(query, context_chunks, template_content=None):
             
             Answer:"""
             
+            
+        # print(f"-------- Using Prompt (Single Batch ZH) --------\n{final_prompt}\n------------------------------------------------")
         return llm_generate(final_prompt).strip()
 
     # If > 1 batch, we continue with Map-Reduce logic
@@ -186,14 +188,19 @@ def generate_answer(query, context_chunks, template_content=None):
         
         Final Synthesized Answer:"""
     
+    # print(f"-------- Using Prompt (Reduce Phase ZH) --------\n{final_prompt}\n------------------------------------------------")
     final_answer = llm_generate(final_prompt)
     
     return final_answer
 
 
-def generate_answer_en(query, context_chunks):
+def generate_answer_en(query, context_chunks, template_content=None):
     context = "\n\n".join([chunk['page_content'] for chunk in context_chunks])
-    prompt = f"""You are a helpful assistant found of precise and faithful answers. 
+    
+    if template_content:
+        prompt = template_content.format(context=context, query=query)
+    else:
+        prompt = f"""You are a helpful assistant found of precise and faithful answers. 
     Your task is to answer the User Question using ONLY the information provided in the Context Chunks below.
     
     User Question: {query}
@@ -207,6 +214,7 @@ def generate_answer_en(query, context_chunks):
     
     Answer:"""
     try:
+        # print(f"-------- Using Prompt (EN) --------\n{prompt}\n------------------------------------------------")
         response = llm_generate(prompt)
         return response
     except Exception as e:

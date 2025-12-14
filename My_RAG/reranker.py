@@ -113,18 +113,7 @@ class BGEReranker:
 
 
 def create_reranker(reranker_type="bge"):
-    # Check env var to force remote mode
-    # 
     use_remote = True
-    # if os.environ.get("USE_REMOTE_RERANKER") == "true":
-    #     print("USE_REMOTE_RERANKER is/set to true. Using Remote Reranker.")
-    #     use_remote = True
-    # elif not FLAG_EMBEDDING_AVAILABLE:
-    #     print("FlagEmbedding not found. Switching to Remote Reranker.")
-    #     use_remote = True
-    # else:
-    #     use_remote = False
-    
     return BGEReranker(use_remote=use_remote)
 
 if __name__ == "__main__":
