@@ -60,7 +60,7 @@ def main(query_path, docs_path, language, output_path):
         # print(f"Retrieved {len(retrieved_chunks)} chunks.")
 
         # 5. Select Prompt
-        # template_content = select_prompt(query_text)
+        template_content = select_prompt(query_text)
 
         # 6. Generate Answer
         # print("Generating answer...") generate_answer_zh is the best till now 
@@ -75,7 +75,7 @@ def main(query_path, docs_path, language, output_path):
         
         query["prediction"]["content"] = answer
         # query["prediction"]["references"] = [retrieved_chunks[0]['page_content']] # one chunk, 
-        query["prediction"]["references"] = [chunk['page_content'] for chunk in retrieved_chunks[:3]] 
+        query["prediction"]["references"] = [chunk['page_content'] for chunk in retrieved_chunks[:5]] 
         # 3 or all chunks
 
     save_jsonl(output_path, queries)
