@@ -24,10 +24,11 @@ def main(query_path, docs_path, language, output_path):
     print(f"Loaded {len(docs_for_chunking)} documents.")
     print(f"Loaded {len(queries)} queries.")
 
-    # 2. Chunk Documents ori_newG_newChunk_en_1000,100.json
+    # 2. Chunk Documents ori_newG_newChunk_en_1000,100.json ori_reranker.json rerank10-> 8
     print("Chunking documents...")
     if language == "en": 
         # Optimize: Use recursive chunking for EN as well to respect sentence boundaries
+        # 2000 400 -> en 
         chunks = recursive_chunk_documents(docs_for_chunking, language, chunk_size=500, chunk_overlap=100) 
     else:# 500 100 good!
         chunks = recursive_chunk_documents(docs_for_chunking, language, chunk_size=500, chunk_overlap=100)
@@ -74,7 +75,7 @@ def main(query_path, docs_path, language, output_path):
         
         query["prediction"]["content"] = answer
         # query["prediction"]["references"] = [retrieved_chunks[0]['page_content']] # one chunk, 
-        query["prediction"]["references"] = [chunk['page_content'] for chunk in retrieved_chunks]
+        query["prediction"]["references"] = [chunk['page_content'] for chunk in retrieved_chunks[:3]] 
         # 3 or all chunks
 
     save_jsonl(output_path, queries)
