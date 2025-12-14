@@ -29,7 +29,7 @@ def main(query_path, docs_path, language, output_path):
     if language == "en": 
         # Optimize: Use recursive chunking for EN as well to respect sentence boundaries
         # 2000 400 -> en 
-        chunks = recursive_chunk_documents(docs_for_chunking, language, chunk_size=500, chunk_overlap=100) 
+        chunks = recursive_chunk_documents(docs_for_chunking, language, chunk_size=256, chunk_overlap=64) 
     else:# 500 100 good!
         chunks = recursive_chunk_documents(docs_for_chunking, language, chunk_size=128, chunk_overlap=40)
     print(f"Created {len(chunks)} chunks.")
