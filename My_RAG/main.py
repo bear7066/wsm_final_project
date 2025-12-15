@@ -60,7 +60,7 @@ def main(query_path, docs_path, language, output_path):
         # print(f"Retrieved {len(retrieved_chunks)} chunks.")
 
         # 5. Select Prompt
-        template_content = select_prompt(query_text)
+        template_content = None #select_prompt(query_text)
 
         # 6. Generate Answer
         # print("Generating answer...") generate_answer_zh is the best till now 
@@ -69,10 +69,10 @@ def main(query_path, docs_path, language, output_path):
         if language == "zh": 
             # zh -> 0.6 0.4 good, en -> 0.5 0.5 good
             # For ZH, use the generator that works best (originally generate_answer)
-            answer = generate_answer(query_text, retrieved_chunks[:5], template_content) 
+            answer = generate_answer(query_text, retrieved_chunks[:3], template_content) 
         else: 
             # For EN, use the English-specific generator or default 
-            answer = generate_answer_en(query_text, retrieved_chunks[:5], template_content) # retrieval score -> Reranker, generation -> prompt
+            answer = generate_answer_en(query_text, retrieved_chunks[:2], template_content) # retrieval score -> Reranker, generation -> prompt
         
         query["prediction"]["content"] = answer
         # query["prediction"]["references"] = [retrieved_chunks[0]['page_content']] # one chunk, 
