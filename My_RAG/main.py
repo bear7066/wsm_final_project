@@ -76,7 +76,10 @@ def main(query_path, docs_path, language, output_path):
         
         query["prediction"]["content"] = answer
         # query["prediction"]["references"] = [retrieved_chunks[0]['page_content']] # one chunk, 
-        query["prediction"]["references"] = [chunk['page_content'] for chunk in retrieved_chunks[:3]] 
+        if language == "zh":
+            query["prediction"]["references"] = [chunk['page_content'] for chunk in retrieved_chunks[:3]] 
+        else:
+            query["prediction"]["references"] = [retrieved_chunks[0]['page_content']]
         # 3 or all chunks
 
     save_jsonl(output_path, queries)
