@@ -60,7 +60,7 @@ def main(query_path, docs_path, language, output_path):
         # print(f"Retrieved {len(retrieved_chunks)} chunks.")
 
         # 5. Select Prompt
-        template_content = None # select_prompt(query_text)
+        template_content = select_prompt(query_text)
 
         # 6. Generate Answer
         # print("Generating answer...") generate_answer_zh is the best till now 
