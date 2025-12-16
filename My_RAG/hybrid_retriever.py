@@ -1,6 +1,7 @@
 from bm25 import BM25Retriever
 from gemma_retriever import VectorRetriever
 from typing import List, Dict
+from utils import llm_generate
 
 
 class HybridRetriever:
@@ -57,14 +58,35 @@ class HybridRetriever:
         """
         if candidate_k is None:
             candidate_k = top_k * 2
-
+        if self.language == "en":
+            prompt = f"""Please generate 3 potential search keywords for this query; Query: {query}"""
+        else:
+            prompt = f"""请针对这个 Query 生成 3 个潜在的搜寻关键字；Query: {query}"""
+        response = llm_generate(prompt)
+        #print(query)
+        #print("query expansion")
+        #print(response)
+        #print("query expansion")
+        expanded_query = query + response
+        #print(expanded_query)
+        #print("after query expansion")
         # Step 1: Get BM25 results
-        bm25_results_with_scores = self.bm25_retriever.retrieve_with_scores(query, top_k=candidate_k)
+        bm25_results_with_scores = self.bm25_retriever.retrieve_with_scores(expanded_query, top_k=candidate_k)
+        #print(bm25_results_with_scores)
         
         bm25_chunk_scores = {
             self.chunks.index(chunk): score 
             for chunk, score in bm25_results_with_scores
         }
+        if self.language == "en":
+            prompt = f"""Please write a short passage that answers the question: {query}"""
+        else:
+            prompt = f"""请写一段简短的文字回答这个问题: {query}"""
+        response = llm_generate(prompt)
+        #print("hyde")
+        #print(response)
+        #print("hyde")
+        query = response
 
         # Step 2: Get Vector results
         vector_results = self.vector_retriever.retrieve_with_scores(query, top_k=candidate_k)
