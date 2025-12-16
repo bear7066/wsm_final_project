@@ -5,13 +5,16 @@ from nltk.stem import WordNetLemmatizer
 #nltk.download('wordnet')
 nltk.data.path.append('./nltk_data/')
 
+import os
+
 class BM25Retriever:
     def __init__(self, chunks, language="en"):
         self.chunks = chunks
         self.language = language
         self.corpus = [chunk['page_content'] for chunk in chunks]
-        self.stopwords = open('english.stop', 'r').read().split()
-        self.ch_stopwords = open('ChineseStopwords.txt', 'r', encoding="utf8").read().split()
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        self.stopwords = open(os.path.join(current_dir, 'EnglishStopwords.txt'), 'r').read().split()
+        self.ch_stopwords = open(os.path.join(current_dir, 'ChineseStopwords.txt'), 'r', encoding="utf8").read().split()
         self.lemmatizer = WordNetLemmatizer()
         if language == "zh":
             #self.tokenized_corpus = [list(jieba.cut(doc)) for doc in self.corpus]
