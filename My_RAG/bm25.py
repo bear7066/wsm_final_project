@@ -1,12 +1,18 @@
 from rank_bm25 import BM25Okapi
 import jieba
+import os
 import nltk
 from nltk.stem import WordNetLemmatizer
 nltk.download('wordnet')
 nltk.download('omw-1.4')
-nltk.data.path.append('./nltk_data/')
+current_dir = os.path.dirname(os.path.abspath(__file__))
 
-import os
+# 組合出 nltk_data 的路徑
+nltk_data_path = os.path.join(current_dir, "nltk_data")
+
+# 將這個路徑加入 NLTK 的搜尋路徑 (放在第一順位)
+if nltk_data_path not in nltk.data.path:
+    nltk.data.path.append(nltk_data_path)
 
 class BM25Retriever:
     def __init__(self, chunks, language="en"):
