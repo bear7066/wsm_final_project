@@ -2,8 +2,8 @@ from rank_bm25 import BM25Okapi
 import jieba
 import nltk
 from nltk.stem import WordNetLemmatizer
-#nltk.download('wordnet')
-#nltk.download('omw-1.4')
+nltk.download('wordnet')
+nltk.download('omw-1.4')
 nltk.data.path.append('./nltk_data/')
 
 import os
