@@ -35,6 +35,8 @@ def recursive_chunk_documents(docs, language, chunk_size=1000, chunk_overlap=200
             text_chunks = _recursive_split(text, chunk_size, chunk_overlap, language=language)
             
             for i, text_chunk in enumerate(text_chunks):
+                chunk_metadata = doc.copy()
+                chunk_metadata.pop('content', None)
                 chunk_metadata['chunk_index'] = i
                 chunk_metadata['original_content'] = text_chunk  # Save original clean text
                 
