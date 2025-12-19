@@ -94,7 +94,8 @@ class HybridRetriever:
         #print("hyde")
         #print(response)
         #print("hyde")
-        query = response
+        # Preserve original query to avoid drift if LLM hallucinates
+        query = query + " " + response
 
         # Step 2: Get Vector results
         vector_results = self.vector_retriever.retrieve_with_scores(query, top_k=candidate_k)

@@ -36,7 +36,7 @@ def main(query_path, docs_path, language, output_path):
 
     # 3. Create Retriever
     print("Creating retriever...")
-    retriever = create_retriever(chunks, language)
+    retriever = create_retriever_pbm25(chunks, language)
     print("Retriever created successfully.")
 
     print("Creating reranker...")
@@ -50,12 +50,11 @@ def main(query_path, docs_path, language, output_path):
         print(f"\nProcessing Query: {query_text[:50]}...")
         
         print("  -> Step 1: Retrieving relevant chunks...")
-        # Optimize: Increase top_k to 10 for English to improve recall of scattered details
-        # if language == "zh": 
-        #     k = 5 # en zh 5 best 
-        # else:
-        #     k = 10
-        retrieved_chunks = retriever.retrieve(query_text, top_k=30)
+        if language == "en":
+            k = 50
+        else:
+            k = 30
+        retrieved_chunks = retriever.retrieve(query_text, top_k=k)
         
         print(f"  -> Step 2: Reranking {len(retrieved_chunks)} chunks...")
         retrieved_chunks = reranker.rerank(query_text, retrieved_chunks, top_k=10)
