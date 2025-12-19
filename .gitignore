@@ -14,3 +14,9 @@ configs/config_local.yaml
 predictions/
 
 .DS_Store
+
+teamF
+
+result
+
+.gitattributes

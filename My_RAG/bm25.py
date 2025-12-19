@@ -1,18 +1,7 @@
 from rank_bm25 import BM25Okapi
 import jieba
 import os
-import nltk
-from nltk.stem import WordNetLemmatizer
-nltk.download('wordnet')
-nltk.download('omw-1.4')
 current_dir = os.path.dirname(os.path.abspath(__file__))
-
-# 組合出 nltk_data 的路徑
-nltk_data_path = os.path.join(current_dir, "nltk_data")
-
-# 將這個路徑加入 NLTK 的搜尋路徑 (放在第一順位)
-if nltk_data_path not in nltk.data.path:
-    nltk.data.path.append(nltk_data_path)
 
 class BM25Retriever:
     def __init__(self, chunks, language="en"):
@@ -22,7 +11,6 @@ class BM25Retriever:
         current_dir = os.path.dirname(os.path.abspath(__file__))
         self.stopwords = open(os.path.join(current_dir, 'EnglishStopwords.txt'), 'r').read().split()
         self.ch_stopwords = open(os.path.join(current_dir, 'ChineseStopwords.txt'), 'r', encoding="utf8").read().split()
-        self.lemmatizer = WordNetLemmatizer()
         if language == "zh":
             #self.tokenized_corpus = [list(jieba.cut(doc)) for doc in self.corpus]
             self.tokenized_corpus = [self.get_weighted_tokens(doc, "zh") for doc in self.corpus]
@@ -66,7 +54,7 @@ class BM25Retriever:
 
         if language == "en":
             clean_tokens = [
-                self.lemmatizer.lemmatize(token)
+                token
                 for token in tokens
                 if token not in self.stopwords and token.isalpha()
             ]

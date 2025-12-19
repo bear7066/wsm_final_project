@@ -4,7 +4,7 @@ from chunker import chunk_documents, recursive_chunk_documents
 # from bm25 import create_retriever
 from hybrid_retriever import create_retriever
 from selector import select_prompt
-from generator import generate_answer_zh, generate_answer_en, generate_answer
+from generator import generate_answer
 from reranker import create_reranker
 import argparse
 
@@ -66,21 +66,18 @@ def main(query_path, docs_path, language, output_path):
         # print("Generating answer...") generate_answer_zh is the best till now 
         # 有可能兩個都 recursive 不錯, irrelanvance en 超高
         # template_content = None -> 會 fall back 成原本效果最好的 prompt
-        if language == "zh": 
-            # zh -> 0.6 0.4 good, en -> 0.5 0.5 good
-            # For ZH, use the generator that works best (originally generate_answer)
-            answer = generate_answer(query_text, retrieved_chunks[:3], template_content) 
-        else: 
-            # For EN, use the English-specific generator or default 
-            answer = generate_answer_en(query_text, retrieved_chunks[:2], template_content) # retrieval score -> Reranker, generation -> prompt
+        top_k_gen = 3 if language == "zh" else 2
+        final_chunks = retrieved_chunks[:top_k_gen]
+        
+        # zh -> 0.6 0.4 good, en -> 0.5 0.5 good
+        answer = generate_answer(query_text, final_chunks, language=language, template_content=template_content) 
         
         query["prediction"]["content"] = answer
-        # query["prediction"]["references"] = [retrieved_chunks[0]['page_content']] # one chunk, 
-        if language == "zh":
-            query["prediction"]["references"] = [chunk['page_content'] for chunk in retrieved_chunks[:3]] 
+        
+        if final_chunks:
+            query["prediction"]["references"] = [c["metadata"].get("original_content", c["page_content"]) for c in final_chunks]   
         else:
-            query["prediction"]["references"] = [retrieved_chunks[0]['page_content']]
-        # 3 or all chunks
+            query["prediction"]["references"] = []
 
     save_jsonl(output_path, queries)
     print("Predictions saved at '{}'".format(output_path))
