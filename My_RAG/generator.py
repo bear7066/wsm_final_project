@@ -529,7 +529,7 @@ def generate_answer(query, context_chunks, language="en", template_content=None)
             stream=False, 
             options={
                "temperature": 0.2,
-               "num_ctx":131072
+                "num_ctx": 8192
             }
          )
         return response["response"]

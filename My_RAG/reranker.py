@@ -113,7 +113,7 @@ class BGEReranker:
 
 
 def create_reranker(reranker_type="bge"):
-    use_remote = True
+    use_remote = False
     return BGEReranker(use_remote=use_remote)
 
 if __name__ == "__main__":

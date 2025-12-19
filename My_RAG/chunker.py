@@ -104,7 +104,7 @@ def recursive_chunk_documents(docs, language, chunk_size=1000, chunk_overlap=200
     print(f"Chunk size: {chunk_size}, Overlap: {chunk_overlap}")
 
     # Build cache path
-    cache_path = f"./chunk_cache/{language}_contextual_chunksize{chunk_size}"
+    cache_path = f"chunk_cache/{language}_contextual_chunksize{chunk_size}.json"
     
     if os.path.exists(cache_path):
         try:
@@ -145,11 +145,20 @@ def recursive_chunk_documents(docs, language, chunk_size=1000, chunk_overlap=200
                 
                 try:
                     split_texts = text_splitter.split_text(original_text)
-                    for text_chunk in split_texts:
+                    for i, text_chunk in enumerate(split_texts):
                         if text_chunk.strip():
+                            # Save original content
+                            chunk_meta = meta.copy()
+                            chunk_meta['original_content'] = text_chunk
+                            chunk_meta['chunk_index'] = i
+                            
+                            # Generate context
+                            # print(f"Generating context for chunk {i}...")
+                            context = _generate_chunk_context(lang, original_text, text_chunk, chunk_meta)
+                            
                             chunks.append({
-                                "page_content": text_chunk,
-                                "metadata": meta,
+                                "page_content": context + "\n" + text_chunk if context else text_chunk,
+                                "metadata": chunk_meta,
                             })
                 except Exception as e:
                     print(f"Error chunking doc: {e}")

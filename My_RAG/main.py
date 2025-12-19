@@ -2,7 +2,7 @@ from tqdm import tqdm
 from utils import load_jsonl, save_jsonl
 from chunker import chunk_documents, recursive_chunk_documents
 # from bm25 import create_retriever
-from hybrid_retriever import create_retriever
+from hybrid_retriever import create_retriever, create_retriever_pbm25
 from selector import select_prompt
 from generator import generate_answer
 from reranker import create_reranker
@@ -27,11 +27,11 @@ def main(query_path, docs_path, language, output_path):
     # 2. Chunk Documents ori_newG_newChunk_en_1000,100.json ori_reranker.json rerank10-> 8
     print("Chunking documents...")
     if language == "en": 
-        # Optimize: Use recursive chunking for EN as well to respect sentence boundaries
-        # 2000 400 -> en 
-        chunks = recursive_chunk_documents(docs_for_chunking, language, chunk_size=800, chunk_overlap=200) 
-    else:# 500 100 good!
-        chunks = recursive_chunk_documents(docs_for_chunking, language, chunk_size=128, chunk_overlap=40)
+        # Match TeamF: 512 size, ~20% overlap (102)
+        chunks = recursive_chunk_documents(docs_for_chunking, language, chunk_size=512, chunk_overlap=512//5) 
+    else:
+        # Match TeamF: 128 size, ~20% overlap (25)
+        chunks = recursive_chunk_documents(docs_for_chunking, language, chunk_size=128, chunk_overlap=128//5)
     print(f"Created {len(chunks)} chunks.")
 
     # 3. Create Retriever
@@ -39,9 +39,9 @@ def main(query_path, docs_path, language, output_path):
     retriever = create_retriever(chunks, language)
     print("Retriever created successfully.")
 
-    # print("Creating reranker...")
-    # reranker = create_reranker()
-    # print("Reranker created successfully.")
+    print("Creating reranker...")
+    reranker = create_reranker()
+    print("Reranker created successfully.")
 
 
     for query in tqdm(queries, desc="Processing Queries"):
@@ -57,8 +57,8 @@ def main(query_path, docs_path, language, output_path):
         #     k = 10
         retrieved_chunks = retriever.retrieve(query_text, top_k=30)
         
-        # print(f"  -> Step 2: Reranking {len(retrieved_chunks)} chunks...")
-        # retrieved_chunks = reranker.rerank(query_text, retrieved_chunks, top_k=10)
+        print(f"  -> Step 2: Reranking {len(retrieved_chunks)} chunks...")
+        retrieved_chunks = reranker.rerank(query_text, retrieved_chunks, top_k=10)
 
         # candidates = retriever.retrieve(query_text, top_k=30)
         # print(f"Retrieved {len(retrieved_chunks)} chunks.")
@@ -71,7 +71,7 @@ def main(query_path, docs_path, language, output_path):
         # print("Generating answer...") generate_answer_zh is the best till now 
         # 有可能兩個都 recursive 不錯, irrelanvance en 超高
         # template_content = None -> 會 fall back 成原本效果最好的 prompt
-        top_k_gen = 3 if language == "zh" else 2
+        top_k_gen = 3 if language == "zh" else 3
         final_chunks = retrieved_chunks[:top_k_gen]
         
         # zh -> 0.6 0.4 good, en -> 0.5 0.5 good
