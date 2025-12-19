@@ -1,54 +1,9 @@
+from langchain_text_splitters import RecursiveCharacterTextSplitter
+from tqdm import tqdm
+import os
+import json
 from ollama import Client
 from utils import load_ollama_config
-
-def chunk_documents(docs, language, chunk_size=1000, chunk_overlap=200):
-    chunks = []
-    for doc_index, doc in enumerate(docs):
-        if 'content' in doc and isinstance(doc['content'], str) and 'language' in doc:
-            text = doc['content']
-            text_len = len(text)
-            lang = doc['language']
-            start_index = 0
-            chunk_count = 0
-            if lang == language:
-                while start_index < text_len:
-                    end_index = min(start_index + chunk_size, text_len)
-                    chunk_metadata = doc.copy()
-                    chunk_metadata.pop('content', None)
-                    chunk_metadata['chunk_index'] = chunk_count
-                    chunk = {
-                        'page_content': text[start_index:end_index],
-                        'metadata': chunk_metadata
-                    }
-                    chunks.append(chunk)
-                    start_index += chunk_size - chunk_overlap
-                    chunk_count += 1
-    return chunks
-# recursive_return_one_chunk.json
-
-def recursive_chunk_documents(docs, language, chunk_size=1000, chunk_overlap=200):
-    chunks = []
-    for doc_index, doc in enumerate(docs):
-        if 'content' in doc and isinstance(doc['content'], str):
-            text = doc['content']
-            # Use recursive chunking for ALL languages, pass language param
-            text_chunks = _recursive_split(text, chunk_size, chunk_overlap, language=language)
-            
-            for i, text_chunk in enumerate(text_chunks):
-                chunk_metadata = doc.copy()
-                chunk_metadata.pop('content', None)
-                chunk_metadata['chunk_index'] = i
-                chunk_metadata['original_content'] = text_chunk  # Save original clean text
-                
-                # Generate context
-                context = _generate_chunk_context(language, text, text_chunk, chunk_metadata)
-                
-                chunk = {
-                    'page_content': context + "\n" + text_chunk,  # Prepend context
-                    'metadata': chunk_metadata
-                }
-                chunks.append(chunk)
-    return chunks
 
 def _generate_chunk_context(language, doc_text, chunk_text, metadata=None):
     """
@@ -74,7 +29,7 @@ def _generate_chunk_context(language, doc_text, chunk_text, metadata=None):
     if language == "zh":
         subject_instruction = ""
         if subject_name:
-            subject_instruction = f'\n重要：本文档的主体是「{subject_name}」。'
+            subject_instruction = f"\n重要：本文档的主体是「{subject_name}」。"
         
         prompt = f"""<document>
 {doc_text_truncated}
@@ -102,7 +57,7 @@ def _generate_chunk_context(language, doc_text, chunk_text, metadata=None):
     else:
         subject_instruction = ""
         if subject_name:
-            subject_instruction = f'\nIMPORTANT: The subject of this document is "{subject_name}".'
+            subject_instruction = f"\nIMPORTANT: The subject of this document is \"{subject_name}\"."
         
         prompt = f"""<document>
 {doc_text_truncated}
@@ -144,96 +99,66 @@ Output ONLY the context description:"""
         print(f"Error generating chunk context: {e}")
         return ""
 
+def recursive_chunk_documents(docs, language, chunk_size=1000, chunk_overlap=200):
+    """Split documents into chunks using recursive character splitting."""
+    print(f"Chunk size: {chunk_size}, Overlap: {chunk_overlap}")
 
-
-def _recursive_split(text, chunk_size, chunk_overlap, language="en"):
-    if language == "zh":
-        separators = ["\n\n", "\n", "。", "！", "？", " ", ""]
-    else:
-        separators = ["\n\n", "\n", ". ", "? ", "! ", "; ", "。", "！", "？", " ", ""]      
-        #     "\n\n",  # 1. Paragraphs
-        #     "\n",    # 2. Lines
-        #     ". ",    # 3. Sentences (Dot + Space)
-        #     "? ",    # 4. Questions
-        #     "! ",    # 5. Exclamations
-        #     "; ",    # 6. Semicolons
-        #     " ",     # 7. Words
-        #     ""       # 8. Characters
-        # ]
+    # Build cache path
+    cache_path = f"./chunk_cache/{language}_contextual_chunksize{chunk_size}"
     
-    def _split_text_recursive(text, separators):
-        # Determine which separator to use
-        separator = separators[-1]
-        new_separators = []
-        
-        for i, sep in enumerate(separators):
-            if sep == "":
-                separator = ""
-                break
-            if sep in text:
-                separator = sep
-                new_separators = separators[i+1:]
-                break
-        
-        # Split
-        if separator:
-            splits = text.split(separator)
-        else:
-            splits = list(text)
-            
-        # Process splits with recursion
-        good_splits = []
-        for s in splits:
-            if len(s) < chunk_size:
-                good_splits.append(s)
-            else:
-                if new_separators:
-                    good_splits.extend(_split_text_recursive(s, new_separators))
-                else:
-                    # Hard truncate if no more separators
-                    for i in range(0, len(s), chunk_size - chunk_overlap):
-                        good_splits.append(s[i:i+chunk_size])
-        
-        # Merge splits into chunks
-        return _merge_splits(good_splits, separator, chunk_size, chunk_overlap)
+    if os.path.exists(cache_path):
+        try:
+            with open(cache_path, "r", encoding="utf-8") as f:
+                chunks = json.load(f)
+            print(f"Chunk cache hit: {cache_path}")
+            return chunks
+        except Exception:
+            print("Cache read failed, regenerating...")
 
-    def _merge_splits(splits, separator, chunk_size, chunk_overlap):
-        docs = []
-        current_doc = []
-        total_len = 0
-        sep_len = len(separator)
-        
-        for split in splits:
-            split_len = len(split)
-            
-            # If adding this split exceeds chunk_size, we need to finalize the current chunk
-            if total_len + split_len + (sep_len if current_doc else 0) > chunk_size:
-                if current_doc:
-                    doc = separator.join(current_doc)
-                    if doc.strip():
-                        docs.append(doc)
-                    
-                    # Manage overlap: remove from front until we fit within overlap/size constraints
-                    # 1. Reduce to overlap size
-                    while total_len > chunk_overlap and current_doc:
-                        p = current_doc.pop(0)
-                        total_len -= len(p) + (sep_len if current_doc else 0)
-                    
-                    # 2. Further reduce if adding the NEW split would still exceed chunk_size
-                    # (This prevents created chunks from exceeding chunk_size)
-                    while total_len + split_len + (sep_len if current_doc else 0) > chunk_size and current_doc:
-                        p = current_doc.pop(0)
-                        total_len -= len(p) + (sep_len if current_doc else 0)
-            
-            current_doc.append(split)
-            total_len += split_len + (sep_len if len(current_doc) > 1 else 0)
-            
-        if current_doc:
-            doc = separator.join(current_doc)
-            if doc.strip():
-                docs.append(doc)
+    if language == "en":
+        text_splitter = RecursiveCharacterTextSplitter(
+            chunk_size=chunk_size,
+            chunk_overlap=chunk_overlap,
+            length_function=len,
+            is_separator_regex=False,
+        separators=["\n\n", "\n", ". ", " ", ""],
+        )
+    else:
+        text_splitter = RecursiveCharacterTextSplitter(
+            chunk_size=chunk_size,
+            chunk_overlap=chunk_overlap,
+            length_function=len,
+            is_separator_regex=False,
+            separators=["\n\n", "\n", "。", "；", "！", "？", "，", "、", "：", " ", ""])
+    
+    chunks = []
+    
+    for doc in tqdm(docs, desc="Recursive Chunking"):   
+        if 'content' in doc and isinstance(doc['content'], str) and 'language' in doc:
+            original_text = doc['content']
+            lang = doc['language']
+
+            if lang == language:
+                # Generate contextual summary for the document
+                meta = doc.copy()
+                meta.pop("content", None)
                 
-        return docs
+                try:
+                    split_texts = text_splitter.split_text(original_text)
+                    for text_chunk in split_texts:
+                        if text_chunk.strip():
+                            chunks.append({
+                                "page_content": text_chunk,
+                                "metadata": meta,
+                            })
+                except Exception as e:
+                    print(f"Error chunking doc: {e}")
+    
+    print(f"Created {len(chunks)} chunks")
+    return chunks
 
-    return _split_text_recursive(text, separators)
+# Alias for compatibility with main.py
+def chunk_documents(docs, language, chunk_size=1000, chunk_overlap=200):
+    return recursive_chunk_documents(docs, language, chunk_size, chunk_overlap)
+
 

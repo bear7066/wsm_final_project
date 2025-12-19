@@ -8,7 +8,7 @@ from generator import generate_answer
 from reranker import create_reranker
 import argparse
 
-# english -> zh -> recursive
+# english -> zh -> recursive 19:26 ->
 
 """
 Top-3: S_Prec=0.0000, S_Rec=0.0000, W_Prec=0.1849, W_Rec=0.6829
@@ -39,22 +39,26 @@ def main(query_path, docs_path, language, output_path):
     retriever = create_retriever(chunks, language)
     print("Retriever created successfully.")
 
-    print("Creating reranker...")
-    reranker = create_reranker()
-    print("Reranker created successfully.")
+    # print("Creating reranker...")
+    # reranker = create_reranker()
+    # print("Reranker created successfully.")
 
 
     for query in tqdm(queries, desc="Processing Queries"):
         # 4. Retrieve relevant chunks
         query_text = query['query']['content']
-        # print(f"\nRetrieving chunks for query: '{query_text}'")
+        print(f"\nProcessing Query: {query_text[:50]}...")
+        
+        print("  -> Step 1: Retrieving relevant chunks...")
         # Optimize: Increase top_k to 10 for English to improve recall of scattered details
         # if language == "zh": 
         #     k = 5 # en zh 5 best 
         # else:
         #     k = 10
         retrieved_chunks = retriever.retrieve(query_text, top_k=30)
-        retrieved_chunks = reranker.rerank(query_text, retrieved_chunks, top_k=10)
+        
+        # print(f"  -> Step 2: Reranking {len(retrieved_chunks)} chunks...")
+        # retrieved_chunks = reranker.rerank(query_text, retrieved_chunks, top_k=10)
 
         # candidates = retriever.retrieve(query_text, top_k=30)
         # print(f"Retrieved {len(retrieved_chunks)} chunks.")
@@ -63,6 +67,7 @@ def main(query_path, docs_path, language, output_path):
         template_content = None #select_prompt(query_text)
 
         # 6. Generate Answer
+        print("  -> Step 3: Generating answer...")
         # print("Generating answer...") generate_answer_zh is the best till now 
         # 有可能兩個都 recursive 不錯, irrelanvance en 超高
         # template_content = None -> 會 fall back 成原本效果最好的 prompt
