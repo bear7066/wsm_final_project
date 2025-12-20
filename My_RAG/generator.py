@@ -132,6 +132,10 @@ def _get_domain_prompt_en(query, context, domain):
 4. **Financial Indicator Focus**:
    - For financial metrics (revenue, profit, assets, liabilities), ensure you identify the correct reporting period.
    - Distinguish between different types of events: asset acquisition, equity acquisition, debt restructuring, dividend distribution, etc.
+5. **Negative Constraints**:
+   - **Do NOT** use knowledge from outside the context.
+   - **Do NOT** mention entities that are not present in the context.
+   - If the context discusses related metrics (e.g., 'revenue') but the question asks about a specific different metric (e.g., 'profit') that is missing, label it as insufficient information rather than inferring.
 
 ### Few-Shot Examples:
 
@@ -181,6 +185,10 @@ Answer: Unable to answer.
 4. **Hospital/Department Information**:
    - Note which hospital, department, or attending physician is mentioned.
    - Different departments may have different records for the same patient.
+5. **Negative Constraints**:
+   - **Do NOT** use knowledge from outside the context.
+   - **Do NOT** mention entities that are not present in the context.
+   - If the context discusses 'symptoms' but the question asks about 'treatment' which is missing, label it as insufficient information.
 
 ### Few-Shot Examples:
 
@@ -230,6 +238,10 @@ Answer: Unable to answer.
 4. **Judgment/Verdict Focus**:
    - Distinguish between different outcomes: guilty/not guilty, liable/not liable, damages awarded, etc.
    - Note any appeals or subsequent rulings.
+5. **Negative Constraints**:
+   - **Do NOT** use knowledge from outside the context.
+   - **Do NOT** mention entities that are not present in the context.
+   - If the context discusses 'charges' but the question asks about 'verdict' which is missing, label it as insufficient information.
 
 ### Few-Shot Examples:
 
@@ -270,6 +282,9 @@ Answer: Unable to answer.
 1. **Information Extraction**: Carefully read and extract relevant information from the context.
 2. **Entity Check**: Verify the entities (people, organizations, locations) mentioned in the question.
 3. **Information Synthesis**: If multiple fragments contain relevant information, synthesize them coherently.
+4. **Negative Constraints**:
+   - **Do NOT** use knowledge from outside the context.
+   - **Do NOT** mention entities that are not present in the context.
 
 ### Few-Shot Examples:
 
