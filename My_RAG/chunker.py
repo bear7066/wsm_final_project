@@ -104,8 +104,11 @@ def recursive_chunk_documents(docs, language, chunk_size=1000, chunk_overlap=200
     print(f"Chunk size: {chunk_size}, Overlap: {chunk_overlap}")
 
     # Build cache path
-    cache_path = f"chunk_cache/{language}_contextual_chunksize{chunk_size}.json"
-    
+    if language == "zh":
+        cache_path = f"chunk_cache/{language}_4omini_contextual_chunksize{chunk_size}.json"
+    else:
+        cache_path = f"chunk_cache/{language}_contextual_chunksize{chunk_size}.json"
+
     if os.path.exists(cache_path):
         try:
             with open(cache_path, "r", encoding="utf-8") as f:
