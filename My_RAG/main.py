@@ -36,7 +36,7 @@ def main(query_path, docs_path, language, output_path):
 
     # 3. Create Retriever
     print("Creating retriever...")
-    retriever = create_retriever_pbm25(chunks, language)
+    retriever = create_retriever(chunks, language)
     print("Retriever created successfully.")
 
     print("Creating reranker...")
