@@ -219,8 +219,8 @@ def main():
     parser.add_argument('--language', required=True, choices=['zh', 'en'], help='Language to process')
     parser.add_argument('--model', required=True, help='Model name to use (e.g., gpt-oss-20b, gpt-4o-mini)')
     parser.add_argument('--output', required=True, help='Output path for the json cache file')
-    parser.add_argument('--chunk_size', type=int, default=1000, help='Chunk size')
-    parser.add_argument('--chunk_overlap', type=int, default=128//5, help='Chunk overlap')
+    parser.add_argument('--chunk_size', type=int, default=512, help='Chunk size')
+    parser.add_argument('--chunk_overlap', type=int, default=512//5, help='Chunk overlap')
     parser.add_argument('--provider', choices=['ollama', 'openai'], default='ollama', help='LLM provider')
     parser.add_argument('--api_key', help='API key for OpenAI (optional if OPENAI_API_KEY env var is set)')
     
