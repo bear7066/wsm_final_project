@@ -6,6 +6,7 @@ from hybrid_retriever import create_retriever, create_retriever_pbm25
 from selector import select_prompt
 from generator import generate_answer
 from reranker import create_reranker
+from Classifier import Classifier
 import argparse
 
 # english -> zh -> recursive 19:26 ->
@@ -93,4 +94,13 @@ if __name__ == "__main__":
     parser.add_argument('--language', help='Language to filter queries (zh or en), if not specified, process all')
     parser.add_argument('--output', help='Path to the output file')
     args = parser.parse_args()
+    q_classifier = Classifier(model_path="My_RAG/my_query_classifier")
+    d_classifier = Classifier(model_path="My_RAG/my_domain_classifier")
+
+    q1 = "What were the impacts of the shareholders' meeting resolutions on the governance structures of Acme Government Solutions in 2021 and AccuTech Solutions Inc. in 2019?"
+    print(f"Q: {q1} -> Type: {q_classifier.predict(q1)}")
+    print(f"Q: {q1} -> Domain: {d_classifier.predict(q1)}")
+    q2 = "根据安骐金融控股有限公司2023年的环境责任报告，安骐金融控股有限公司是如何通过投资于碳抵消项目和开发绿色产品来提升市场竞争力的？"
+    print(f"Q: {q2} -> Type: {q_classifier.predict(q2)}")
+    print(f"Q: {q2} -> Domain: {d_classifier.predict(q2)}")
     main(args.query_path, args.docs_path, args.language, args.output)
